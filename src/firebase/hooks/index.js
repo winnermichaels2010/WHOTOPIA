@@ -24,7 +24,3 @@ export {
   useRealtimeDB 
 } from './useRealtimeDB.js';
 
-// Default exports for combined hooks
-export { default as useAuth } from './useAuth.js';
-export { default as useFirestore } from './useFirestore.js';
-export { default as useRealtimeDB } from './useRealtimeDB.js';

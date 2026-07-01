@@ -25,7 +25,7 @@
  */
 
 import { initializeApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
 import firebaseConfig from './firebaseConfig.js';
@@ -34,8 +34,6 @@ import firebaseConfig from './firebaseConfig.js';
 const app = initializeApp(firebaseConfig);
 
 // Initialize Authentication
-// For web, we use the default auth instance
-import { getAuth } from 'firebase/auth';
 const auth = getAuth(app);
 
 // Initialize Firestore Database

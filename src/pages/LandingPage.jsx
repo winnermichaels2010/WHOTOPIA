@@ -10,22 +10,12 @@
  * - Mobile responsive design
  */
 
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlay, FaUsers, FaTrophy, FaGamepad, FaStar, FaArrowRight, FaCheckCircle, FaTwitter, FaInstagram, FaDiscord } from 'react-icons/fa';
 import './LandingPage.css';
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleGetStarted = () => {
     navigate('/login');
@@ -33,22 +23,6 @@ const LandingPage = () => {
 
   return (
     <div className="landing-page">
-      {/* Navigation */}
-      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <div className="nav-container">
-          <div className="nav-logo">
-            <span className="logo-text">Whotopia</span>
-          </div>
-          <div className="nav-links">
-            <a href="#features">Features</a>
-            <a href="#how-to-play">How to Play</a>
-            <a href="#testimonials">Testimonials</a>
-            <button className="nav-cta" onClick={handleGetStarted}>
-              Get Started
-            </button>
-          </div>
-        </div>
-      </nav>
 
       {/* Hero Section */}
       <section className="hero-section">
@@ -90,10 +64,30 @@ const LandingPage = () => {
           </div>
           <div className="hero-visual">
             <div className="card-stack">
-              <div className="card card-1"></div>
-              <div className="card card-2"></div>
-              <div className="card card-3"></div>
-              <div className="card card-4"></div>
+              <div className="card card-1">
+                <div className="card-inner">
+                  <div className="card-symbol">★</div>
+                  <div className="card-value">7</div>
+                </div>
+              </div>
+              <div className="card card-2">
+                <div className="card-inner">
+                  <div className="card-symbol">◆</div>
+                  <div className="card-value">5</div>
+                </div>
+              </div>
+              <div className="card card-3">
+                <div className="card-inner">
+                  <div className="card-symbol">●</div>
+                  <div className="card-value">3</div>
+                </div>
+              </div>
+              <div className="card card-4">
+                <div className="card-inner">
+                  <div className="card-symbol whot">W</div>
+                  <div className="card-value">14</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

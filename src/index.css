@@ -1,68 +1,99 @@
+/* CSS Variables for Light/Dark Theme */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Light theme (default) */
+  --bg-primary: #fef9f5;
+  --bg-secondary: #fff5ef;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --border-color: rgba(139, 69, 19, 0.12);
+  --hover-bg: rgba(230, 57, 70, 0.06);
+  --active-bg: rgba(230, 57, 70, 0.1);
+  --shadow-color: rgba(139, 69, 19, 0.08);
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --text-primary: #2c1810;
+  --text-secondary: #6b4c3b;
+  --text-muted: #a08070;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --accent-red: #c1121f;
+  --accent-brown: #8B4513;
+  --accent-gradient: linear-gradient(135deg, #c1121f, #8B4513);
+  --auth-bg: linear-gradient(135deg, #fef9f5 0%, #f5e6d0 50%, #efd6b8 100%);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+[data-theme="dark"] {
+  --bg-primary: #120808;
+  --bg-secondary: #1a0e0e;
+  --sidebar-bg: #150b0b;
+  --card-bg: #1f1212;
+  --border-color: rgba(230, 57, 70, 0.15);
+  --hover-bg: rgba(230, 57, 70, 0.08);
+  --active-bg: rgba(230, 57, 70, 0.15);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+
+  --text-primary: #f5e6d0;
+  --text-secondary: #c4a898;
+  --text-muted: #8a6a5a;
+
+  --accent-red: #e63946;
+  --accent-brown: #a0522d;
+  --auth-bg: linear-gradient(135deg, #120808 0%, #1f1212 50%, #2c1810 100%);
 }
-a:hover {
-  color: #535bf2;
+
+/* Base Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.3s ease, color 0.3s ease;
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent-red);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+a:hover {
+  color: var(--accent-brown);
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
