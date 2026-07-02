@@ -1,6 +1,6 @@
 import Card from './Card';
 
-const PlayerHand = ({ cards, onCardClick, selectedCard, disabled, validMoves }) => {
+const PlayerHand = ({ cards, onCardClick, disabled, validMoves }) => {
   if (!cards || cards.length === 0) {
     return (
       <div className="player-hand empty">
@@ -19,8 +19,8 @@ const PlayerHand = ({ cards, onCardClick, selectedCard, disabled, validMoves }) 
               key={card.id}
               card={card}
               onClick={onCardClick}
-              selected={selectedCard?.id === card.id}
               disabled={disabled || !isValid}
+              small
             />
           );
         })}

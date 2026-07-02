@@ -9,6 +9,15 @@ const SYMBOL_COLORS = {
   whot: '#ffd700',
 };
 
+const SPECIAL_LABELS = {
+  hold: 'HOLD',
+  pick2: 'PICK 2',
+  pick3: 'PICK 3',
+  suspension: 'SUSPEND',
+  generalMarket: 'MARKET',
+  whot: 'WHOT',
+};
+
 const Card = ({ card, onClick, selected, disabled, small }) => {
   if (!card) return null;
 
@@ -19,7 +28,7 @@ const Card = ({ card, onClick, selected, disabled, small }) => {
   };
 
   const symbolColor = SYMBOL_COLORS[card.symbol] || '#e63946';
-  const isWhot = card.specialType === 'whot';
+  const isWhot = card.value === 20;
 
   return (
     <div
@@ -37,10 +46,7 @@ const Card = ({ card, onClick, selected, disabled, small }) => {
           </span>
           {card.isSpecial && (
             <span className="card-effect">
-              {card.specialType === 'hold' ? 'HOLD' :
-               card.specialType === 'pick2' ? 'PICK 2' :
-               card.specialType === 'market' ? 'MARKET' :
-               card.specialType === 'whot' ? 'WHOT' : ''}
+              {SPECIAL_LABELS[card.specialType] || ''}
             </span>
           )}
         </div>

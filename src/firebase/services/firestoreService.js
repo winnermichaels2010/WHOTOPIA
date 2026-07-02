@@ -40,8 +40,6 @@ import {
   onSnapshot,
   serverTimestamp,
   increment,
-  arrayUnion,
-  arrayRemove,
   runTransaction
 } from 'firebase/firestore';
 import { firestore } from '../index.js';
@@ -205,7 +203,7 @@ export const getGlobalLeaderboard = async (limitCount = 50) => {
  * @param {number} limitCount - Maximum number of players to retrieve
  * @returns {Promise<DocumentSnapshot>} Weekly leaderboard snapshot
  */
-export const getWeeklyLeaderboard = async (limitCount = 50) => {
+export const getWeeklyLeaderboard = async (_limitCount = 50) => {
   const leaderboardRef = doc(firestore, LEADERBOARDS_COLLECTION, 'weekly');
   const leaderboardSnap = await getDoc(leaderboardRef);
   return leaderboardSnap;

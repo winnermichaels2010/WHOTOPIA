@@ -1,53 +1,31 @@
-/**
- * AIEngine - AI opponent for Whot card game
- * 
- * Three difficulty levels:
- * - Easy: Plays first valid card, no strategy
- * - Medium: Prioritizes special cards, matches by number first
- * - Hard: Point-based evaluation, strategic card selection
- */
-
 class AIEngine {
   constructor(difficulty = 'medium') {
     this.difficulty = difficulty;
   }
 
-  /**
-   * Choose the best card for the AI to play
-   * @param {Array} validMoves - Array of valid cards
-   * @param {Object} gameState - Current game state
-   * @returns {Object|null} Selected card or null (draw)
-   */
-  chooseCard(validMoves, gameState) {
-    if (validMoves.length === 0) return null;
+  chooseCard(validCards, gameState) {
+    if (!validCards || validCards.length === 0) return null;
 
     switch (this.difficulty) {
       case 'easy':
-        return this.easyChoice(validMoves);
+        return this._easyChoice(validCards);
       case 'medium':
-        return this.mediumChoice(validMoves, gameState);
+        return this._mediumChoice(validCards, gameState);
       case 'hard':
-        return this.hardChoice(validMoves, gameState);
+        return this._hardChoice(validCards, gameState);
       default:
-        return this.mediumChoice(validMoves, gameState);
+        return this._mediumChoice(validCards, gameState);
     }
   }
 
-  /**
-   * Choose a symbol when playing Market or Whot
-   * @param {Object} gameState - Current game state
-   * @returns {string} Chosen symbol
-   */
   chooseSymbol(gameState) {
-    // Count symbols in AI's hand
     const symbolCounts = {};
     for (const card of gameState.myHand) {
-      if (card.symbol !== 'whot') {
+      if (card.value !== 20) {
         symbolCounts[card.symbol] = (symbolCounts[card.symbol] || 0) + 1;
       }
     }
 
-    // Choose the symbol we have the most of
     let bestSymbol = 'star';
     let maxCount = 0;
     for (const [symbol, count] of Object.entries(symbolCounts)) {
@@ -60,106 +38,86 @@ class AIEngine {
     return bestSymbol;
   }
 
-  /**
-   * Easy: Play first valid card
-   */
-  easyChoice(validMoves) {
-    return validMoves[0];
+  shouldDraw(validCards, _gameState) {
+    return !validCards || validCards.length === 0;
   }
 
-  /**
-   * Medium: Prioritize special cards, match by number
-   */
-  mediumChoice(validMoves, gameState) {
-    // Priority: Whot > Market > Hold > Pick 2 > regular cards
-    const whotCards = validMoves.filter(c => c.specialType === 'whot');
-    if (whotCards.length > 0 && validMoves.length > 1) {
-      // Only play Whot if we have many cards left
-      if (gameState.myHand.length > 3) {
-        return whotCards[0];
-      }
+  shouldPlayDrawnCard(card, gameState) {
+    if (!card) return false;
+    const validCards = gameState.validMoves || [];
+    if (!validCards.some(c => c.id === card.id)) return false;
+    if (this.difficulty === 'easy') return Math.random() > 0.5;
+    return true;
+  }
+
+  _easyChoice(validCards) {
+    return validCards[0];
+  }
+
+  _mediumChoice(validCards, gameState) {
+    const nonSpecial = validCards.filter(c => !c.isSpecial);
+    if (nonSpecial.length > 0 && gameState.myHand.length > 4) {
+      const sorted = [...nonSpecial].sort((a, b) => b.value - a.value);
+      return sorted[0];
     }
 
-    // Prefer playing Market cards
-    const marketCards = validMoves.filter(c => c.specialType === 'market');
-    if (marketCards.length > 0) return marketCards[0];
+    const pickCards = validCards.filter(c => c.specialType === 'pick2' || c.specialType === 'pick3');
+    if (pickCards.length > 0 && gameState.myHand.length > 6) return pickCards[0];
 
-    // Prefer playing Hold cards
-    const holdCards = validMoves.filter(c => c.specialType === 'hold');
+    const holdCards = validCards.filter(c => c.specialType === 'hold');
     if (holdCards.length > 0) return holdCards[0];
 
-    // Prefer playing Pick 2 cards
-    const pick2Cards = validMoves.filter(c => c.specialType === 'pick2');
-    if (pick2Cards.length > 0) return pick2Cards[0];
+    const whotCards = validCards.filter(c => c.value === 20);
+    if (whotCards.length > 0 && gameState.myHand.length <= 3) return whotCards[0];
 
-    // Match by value (prefer higher values to get rid of them)
-    const sortedByValue = [...validMoves].sort((a, b) => b.value - a.value);
-    return sortedByValue[0];
+    const suspensionCards = validCards.filter(c => c.specialType === 'suspension');
+    if (suspensionCards.length > 0) return suspensionCards[0];
+
+    const marketCards = validCards.filter(c => c.specialType === 'generalMarket');
+    if (marketCards.length > 0 && gameState.myHand.length > 3) return marketCards[0];
+
+    const sorted = [...validCards].sort((a, b) => b.value - a.value);
+    return sorted[0];
   }
 
-  /**
-   * Hard: Point-based strategic evaluation
-   */
-  hardChoice(validMoves, gameState) {
-    const topCard = gameState.topCard;
-
-    // Score each valid move
-    const scoredMoves = validMoves.map(card => {
+  _hardChoice(validCards, gameState) {
+    const scoredMoves = validCards.map(card => {
       let score = 0;
 
-      // +50 for playing Whot (wild card)
-      if (card.specialType === 'whot') score += 50;
+      if (card.value === 20) {
+        score += card.specialType === 'whot' ? 50 : 0;
+        if (gameState.myHand.length <= 2) score += 30;
+      }
 
-      // +40 for playing Market (choose symbol)
-      if (card.specialType === 'market') score += 40;
+      if (card.specialType === 'hold') score += 25;
 
-      // +30 for playing Hold (skip opponent)
-      if (card.specialType === 'hold') score += 30;
-
-      // +20 for playing Pick 2
       if (card.specialType === 'pick2') score += 20;
+      if (card.specialType === 'pick3') score += 25;
 
-      // +15 for matching by symbol (keeps game going)
-      if (card.symbol === gameState.currentSymbol) score += 15;
+      if (card.specialType === 'suspension') score += 15;
 
-      // +10 for matching by value
-      if (topCard && card.value === topCard.value) score += 10;
+      if (card.specialType === 'generalMarket') {
+        score += gameState.players.length > 2 ? 20 : 10;
+      }
 
-      // -5 for each card of this symbol in hand (prefer to keep pairs)
+      if (!card.isSpecial) {
+        score += 5;
+      }
+
       const sameSymbolCount = gameState.myHand.filter(c => c.symbol === card.symbol).length;
-      if (sameSymbolCount > 1) score -= 5;
+      if (sameSymbolCount > 1 && !card.isSpecial) score -= 5;
 
-      // +25 if playing this card reduces hand to 1 (one card left!)
       const cardsLeft = gameState.myHand.length - 1;
-      if (cardsLeft === 1) score += 25;
-      if (cardsLeft === 0) score += 100; // Winning move
+      if (cardsLeft === 1) score += 15;
+      if (cardsLeft === 0) score += 100;
 
-      // -10 for high value cards (get rid of them)
-      if (card.value >= 10 && card.value < 20) score += 10;
+      if (card.value >= 10 && card.value < 20 && !card.isSpecial) score += 8;
 
       return { card, score };
     });
 
-    // Sort by score descending
     scoredMoves.sort((a, b) => b.score - a.score);
     return scoredMoves[0].card;
-  }
-
-  /**
-   * Decide whether to draw a card or play
-   * @param {Array} validMoves - Valid cards
-   * @param {Object} gameState - Game state
-   * @returns {boolean} True if AI should draw
-   */
-  shouldDraw(validMoves, gameState) {
-    if (validMoves.length === 0) return true;
-    if (gameState.pendingPick2 > 0) return true;
-
-    // Easy: always play if possible
-    if (this.difficulty === 'easy') return false;
-
-    // Medium/Hard: play if we have valid moves
-    return false;
   }
 }
 

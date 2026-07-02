@@ -38,14 +38,9 @@ import {
   remove,
   onValue,
   onChildAdded,
-  onChildChanged,
-  onChildRemoved,
   push,
   serverTimestamp,
   onDisconnect,
-  query as rtdbQuery,
-  orderByChild,
-  limitToLast,
   off
 } from 'firebase/database';
 import { realtimeDB } from '../index.js';

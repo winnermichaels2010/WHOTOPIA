@@ -33,7 +33,6 @@ import {
   deleteActiveGame,
   sendChatMessage,
   onChatMessages,
-  onNewChatMessage,
   clearChat,
   setUserPresence,
   getUserPresence,

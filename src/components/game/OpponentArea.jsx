@@ -1,6 +1,6 @@
 import { FaUser } from 'react-icons/fa';
 
-const OpponentArea = ({ players, currentPlayerId, currentTurn }) => {
+const OpponentArea = ({ players, currentPlayerId }) => {
   return (
     <div className="opponent-area">
       {players

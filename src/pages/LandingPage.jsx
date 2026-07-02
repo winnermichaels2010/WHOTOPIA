@@ -177,7 +177,7 @@ const LandingPage = () => {
               <div className="step-content">
                 <h3 className="step-title">Create an Account</h3>
                 <p className="step-description">
-                  Sign up with your email or Google account. It's quick and free.
+                   Sign up with your email or Google account. It&apos;s quick and free.
                 </p>
               </div>
             </div>
@@ -238,7 +238,7 @@ const LandingPage = () => {
                 ))}
               </div>
               <p className="testimonial-text">
-                "Whotopia brings back childhood memories! The multiplayer feature is amazing - I can play with my friends who live in different cities."
+                &ldquo;Whotopia brings back childhood memories! The multiplayer feature is amazing - I can play with my friends who live in different cities.&rdquo;
               </p>
               <div className="testimonial-author">
                 <div className="author-avatar">A</div>
@@ -255,7 +255,7 @@ const LandingPage = () => {
                 ))}
               </div>
               <p className="testimonial-text">
-                "The best online Whot game I've played. Smooth gameplay, great design, and the leaderboards keep me coming back for more!"
+                &ldquo;The best online Whot game I&apos;ve played. Smooth gameplay, great design, and the leaderboards keep me coming back for more!&rdquo;
               </p>
               <div className="testimonial-author">
                 <div className="author-avatar">N</div>
@@ -272,7 +272,7 @@ const LandingPage = () => {
                 ))}
               </div>
               <p className="testimonial-text">
-                "Finally, a proper Whot game online! The in-game chat makes it so much fun. Highly recommend to all card game lovers."
+                &ldquo;Finally, a proper Whot game online! The in-game chat makes it so much fun. Highly recommend to all card game lovers.&rdquo;
               </p>
               <div className="testimonial-author">
                 <div className="author-avatar">C</div>

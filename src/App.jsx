@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import GamePage from './pages/GamePage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import PublicRoute from './components/auth/PublicRoute';
 import './App.css';
 
 function App() {
@@ -29,7 +30,7 @@ function App() {
               element={
                 <Sidebar>
                   <Routes>
-                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
                     <Route
                       path="/home"
                       element={

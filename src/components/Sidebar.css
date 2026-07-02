@@ -236,4 +236,12 @@
   .sidebar-overlay {
     display: block;
   }
+
+  .mobile-hamburger.hidden {
+    display: none;
+  }
+
+  .sidebar-collapse-btn {
+    display: none;
+  }
 }

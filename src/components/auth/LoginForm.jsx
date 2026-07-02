@@ -130,7 +130,7 @@ const LoginForm = ({ onSwitchToRegister, onSwitchToForgotPassword }) => {
 
       <div className="auth-footer">
         <p>
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <button
             type="button"
             className="text-button"

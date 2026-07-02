@@ -1,14 +1,3 @@
-/**
- * WhotDeck - Creates and manages the Whot card deck
- * 
- * Whot card game has 54 cards with 5 symbols + Whot:
- * - Star (★), Circle (●), Cross (✚), Square (■), Triangle (▲)
- * - Whot (⭐) - wild card
- * 
- * Card values: 1-14 (with duplicates for some values)
- * Special cards: 1=Hold, 2=Pick 2, 5=Market, 8=Market, 14=Whot
- */
-
 const SYMBOLS = {
   STAR: { id: 'star', symbol: '★', name: 'Star' },
   CIRCLE: { id: 'circle', symbol: '●', name: 'Circle' },
@@ -18,31 +7,17 @@ const SYMBOLS = {
   WHOT: { id: 'whot', symbol: '⭐', name: 'Whot' },
 };
 
-// Card distribution: [value, count]
-const CARD_DISTRIBUTION = [
-  [1, 3],   // Hold - 3 per symbol
-  [2, 2],   // Pick 2 - 2 per symbol
-  [3, 2],   // 2 per symbol
-  [4, 2],   // 2 per symbol
-  [5, 3],   // Market - 3 per symbol
-  [6, 1],   // 1 per symbol
-  [7, 1],   // 1 per symbol
-  [8, 2],   // Market - 2 per symbol
-  [9, 1],   // 1 per symbol
-  [10, 1],  // 1 per symbol
-  [11, 1],  // 1 per symbol
-  [12, 1],  // 1 per symbol
-  [13, 1],  // 1 per symbol
-  [14, 1],  // Whot - 1 per symbol
-];
+const SYMBOL_VALUES = {
+  circle: [1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14],
+  triangle: [1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14],
+  cross: [1, 2, 3, 5, 7, 10, 11, 13, 14],
+  square: [1, 2, 3, 5, 7, 10, 11, 13, 14],
+  star: [1, 2, 3, 4, 5, 7, 8],
+};
 
-const WHOT_CARDS = [
-  { value: 20, symbol: 'whot', symbolDisplay: '⭐', name: 'Whot' },
-  { value: 20, symbol: 'whot', symbolDisplay: '⭐', name: 'Whot' },
-  { value: 20, symbol: 'whot', symbolDisplay: '⭐', name: 'Whot' },
-  { value: 20, symbol: 'whot', symbolDisplay: '⭐', name: 'Whot' },
-  { value: 20, symbol: 'whot', symbolDisplay: '⭐', name: 'Whot' },
-];
+const SPECIAL_VALUES = [1, 2, 5, 8, 14, 20];
+
+const TOTAL_CARDS = 54;
 
 class WhotDeck {
   constructor() {
@@ -50,40 +25,17 @@ class WhotDeck {
     this.discardPile = [];
   }
 
-  /**
-   * Create a full 54-card Whot deck
-   */
   createDeck() {
     this.cards = [];
     const symbols = Object.values(SYMBOLS).filter(s => s.id !== 'whot');
 
-    // Create regular cards
     for (const symbol of symbols) {
-      for (const [value, count] of CARD_DISTRIBUTION) {
-        for (let i = 0; i < count; i++) {
-          this.cards.push({
-            id: `${symbol.id}-${value}-${i}`,
-            value,
-            symbol: symbol.id,
-            symbolDisplay: symbol.symbol,
-            name: value === 1 ? 'Hold' :
-                  value === 2 ? 'Pick 2' :
-                  value === 5 ? 'Market' :
-                  value === 8 ? 'Market' :
-                  value === 14 ? 'Whot' :
-                  `${value}`,
-            isSpecial: [1, 2, 5, 8, 14].includes(value),
-            specialType: value === 1 ? 'hold' :
-                        value === 2 ? 'pick2' :
-                        value === 5 ? 'market' :
-                        value === 8 ? 'market' :
-                        value === 14 ? 'whot' : null,
-          });
-        }
+      const values = SYMBOL_VALUES[symbol.id];
+      for (let i = 0; i < values.length; i++) {
+        this.cards.push(this._makeCard(symbol, values[i], i));
       }
     }
 
-    // Add Whot cards (5 Whot cards)
     for (let i = 0; i < 5; i++) {
       this.cards.push({
         id: `whot-${i}`,
@@ -99,9 +51,76 @@ class WhotDeck {
     return this.cards;
   }
 
-  /**
-   * Shuffle the deck using Fisher-Yates algorithm
-   */
+  _makeCard(symbol, value, index) {
+    const specialType = {
+      1: 'hold',
+      2: 'pick2',
+      5: 'pick3',
+      8: 'suspension',
+      14: 'generalMarket',
+    }[value] || null;
+
+    const name = {
+      1: 'Hold On',
+      2: 'Pick Two',
+      5: 'Pick Three',
+      8: 'Suspension',
+      14: 'General Market',
+    }[value] || `${value}`;
+
+    return {
+      id: `${symbol.id}-${value}-${index}`,
+      value,
+      symbol: symbol.id,
+      symbolDisplay: symbol.symbol,
+      name,
+      isSpecial: SPECIAL_VALUES.includes(value),
+      specialType,
+    };
+  }
+
+  countCardsBySymbol() {
+    const counts = {};
+    for (const card of this.cards) {
+      counts[card.symbol] = (counts[card.symbol] || 0) + 1;
+    }
+    return counts;
+  }
+
+  validate() {
+    if (this.cards.length !== TOTAL_CARDS) {
+      return { valid: false, error: `Expected ${TOTAL_CARDS} cards, got ${this.cards.length}` };
+    }
+
+    const symbolCounts = this.countCardsBySymbol();
+    const expected = {
+      circle: 12, triangle: 12, cross: 9, square: 9, star: 7, whot: 5,
+    };
+
+    for (const [sym, expectedCount] of Object.entries(expected)) {
+      const actual = symbolCounts[sym] || 0;
+      if (actual !== expectedCount) {
+        return { valid: false, error: `Symbol "${sym}" has ${actual} cards, expected ${expectedCount}` };
+      }
+    }
+
+    const whotCards = this.cards.filter(c => c.value === 20);
+    if (whotCards.length !== 5) {
+      return { valid: false, error: `Expected 5 Whot cards, got ${whotCards.length}` };
+    }
+
+    for (const [symbolId, values] of Object.entries(SYMBOL_VALUES)) {
+      for (const value of values) {
+        const match = this.cards.filter(c => c.symbol === symbolId && c.value === value);
+        if (match.length !== 1) {
+          return { valid: false, error: `Expected 1 card for ${symbolId}-${value}, got ${match.length}` };
+        }
+      }
+    }
+
+    return { valid: true };
+  }
+
   shuffle() {
     for (let i = this.cards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -110,15 +129,7 @@ class WhotDeck {
     return this.cards;
   }
 
-  /**
-   * Deal cards to players
-   * @param {number} numPlayers - Number of players
-   * @param {number} cardsPerPlayer - Cards per player (default: 5)
-   * @returns {Array} Array of player hands
-   */
   deal(numPlayers, cardsPerPlayer = 5) {
-    this.createDeck();
-    this.shuffle();
     this.discardPile = [];
 
     const hands = [];
@@ -134,19 +145,12 @@ class WhotDeck {
       }
     }
 
-    // Remaining cards become the draw pile
     this.cards = this.cards.slice(cardIndex);
-
     return hands;
   }
 
-  /**
-   * Draw a card from the deck
-   * @returns {Object|null} Card object or null if deck is empty
-   */
   drawCard() {
     if (this.cards.length === 0) {
-      // Reshuffle discard pile into deck (keep top card)
       if (this.discardPile.length > 1) {
         const topCard = this.discardPile.pop();
         this.cards = [...this.discardPile];
@@ -159,31 +163,20 @@ class WhotDeck {
     return this.cards.pop();
   }
 
-  /**
-   * Play a card to the discard pile
-   * @param {Object} card - Card to play
-   */
   playCard(card) {
     this.discardPile.push(card);
   }
 
-  /**
-   * Get the top card of the discard pile
-   * @returns {Object|null} Top card or null
-   */
   getTopCard() {
     if (this.discardPile.length === 0) return null;
     return this.discardPile[this.discardPile.length - 1];
   }
 
-  /**
-   * Reset the deck
-   */
   reset() {
     this.cards = [];
     this.discardPile = [];
   }
 }
 
-export { WhotDeck, SYMBOLS };
+export { WhotDeck, SYMBOLS, SYMBOL_VALUES };
 export default WhotDeck;

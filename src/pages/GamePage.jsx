@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import GameEngine from '../game/GameEngine';
 import AIEngine from '../game/AIEngine';
 import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
-import { FaArrowLeft, FaPlay, FaRedo, FaStepForward, FaTimes, FaRobot, FaGlobe, FaTrophy, FaSmile, FaMeh } from 'react-icons/fa';
+import { FaArrowLeft, FaPlay, FaRedo, FaRobot, FaGlobe, FaTrophy, FaMeh } from 'react-icons/fa';
 import './GamePage.css';
 
 const SYMBOLS = [
@@ -23,19 +23,20 @@ const DIFFICULTIES = [
 ];
 
 const GamePage = () => {
-  const { mode } = useParams(); // 'ai' or 'online'
+  const { mode } = useParams();
   const navigate = useNavigate();
   const gameRef = useRef(null);
   const aiRef = useRef(null);
 
   const [gameState, setGameState] = useState(null);
-  const [selectedCard, setSelectedCard] = useState(null);
   const [showSymbolPicker, setShowSymbolPicker] = useState(false);
   const [pendingCard, setPendingCard] = useState(null);
   const [showStartScreen, setShowStartScreen] = useState(true);
   const [difficulty, setDifficulty] = useState('medium');
-  const [gameLog, setGameLog] = useState([]);
   const [isAIThinking, setIsAIThinking] = useState(false);
+  const [dealing, setDealing] = useState(false);
+  const [dealPhase, setDealPhase] = useState(0);
+  const [revealed, setRevealed] = useState(false);
 
   const updateGameState = useCallback(() => {
     if (gameRef.current) {
@@ -43,10 +44,6 @@ const GamePage = () => {
       setGameState({ ...state });
     }
   }, []);
-
-  const addLog = (message) => {
-    setGameLog(prev => [{ text: message, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 50));
-  };
 
   const startGame = () => {
     const engine = new GameEngine();
@@ -62,24 +59,46 @@ const GamePage = () => {
     }
 
     setShowStartScreen(false);
-    setSelectedCard(null);
-    setGameLog([]);
-    updateGameState();
-    addLog('Game started! Good luck!');
+    setDealing(true);
+    setDealPhase(0);
+    setRevealed(false);
+    setGameState(null);
+
+    setTimeout(() => setDealPhase(1), 400);
+    setTimeout(() => setDealPhase(2), 900);
+    setTimeout(() => {
+      setDealPhase(3);
+      setRevealed(true);
+      updateGameState();
+    }, 1400);
+    setTimeout(() => {
+      setDealing(false);
+      if (engine.currentTurn === 1) {
+        setTimeout(() => handleAITurn(), 600);
+      }
+    }, 2000);
   };
 
   const handleCardClick = (card) => {
     if (!gameRef.current || gameRef.current.gameStatus !== 'playing') return;
     if (gameRef.current.currentTurn !== 0) return;
-    if (gameRef.current.pendingPick2 > 0) return;
+    if (gameRef.current.drawPenalty > 0) return;
 
-    setSelectedCard(prev => prev?.id === card.id ? null : card);
-
-    // Check if card needs symbol selection
-    if (card && (card.specialType === 'market' || card.specialType === 'whot')) {
+    if (card.value === 20) {
       setPendingCard(card);
       setShowSymbolPicker(true);
-      setSelectedCard(null);
+      return;
+    }
+
+    const result = gameRef.current.playCard(card, 0);
+    if (result.success) {
+      updateGameState();
+      if (result.gameOver) {
+        return;
+      }
+      if (gameRef.current.currentTurn === 1) {
+        setTimeout(() => handleAITurn(), 600);
+      }
     }
   };
 
@@ -91,55 +110,35 @@ const GamePage = () => {
     setPendingCard(null);
 
     if (result.success) {
-      addLog(`You played ${pendingCard.name} > ${symbolId}`);
       updateGameState();
-
       if (result.gameOver) {
-        addLog('You win!');
         return;
       }
-
-      // AI turn
-      setTimeout(() => handleAITurn(), 800);
-    }
-  };
-
-  const handlePlayCard = () => {
-    if (!selectedCard) return;
-
-    if (selectedCard.specialType === 'market' || selectedCard.specialType === 'whot') {
-      setPendingCard(selectedCard);
-      setShowSymbolPicker(true);
-      setSelectedCard(null);
-      return;
-    }
-
-    const result = gameRef.current.playCard(selectedCard, 0);
-    if (result.success) {
-      addLog(`You played ${selectedCard.name}`);
-      setSelectedCard(null);
-      updateGameState();
-
-      if (result.gameOver) {
-        addLog('You win!');
-        return;
+      if (gameRef.current.currentTurn === 1) {
+        setTimeout(() => handleAITurn(), 600);
       }
-
-      // AI turn
-      setTimeout(() => handleAITurn(), 800);
     }
   };
 
   const handleDrawCard = () => {
     if (!gameRef.current || gameRef.current.currentTurn !== 0) return;
 
-    const drawn = gameRef.current.drawCards(0, gameRef.current.pendingPick2 > 0 ? gameRef.current.pendingPick2 : 1);
-    addLog(`You drew ${drawn.length} card(s)`);
-    setSelectedCard(null);
-    updateGameState();
+    const result = gameRef.current.drawCard(0);
+    if (result.success) {
+      updateGameState();
+      if (!result.isPlayable && gameRef.current.currentTurn === 1) {
+        setTimeout(() => handleAITurn(), 600);
+      }
+    }
+  };
 
-    // AI turn
-    setTimeout(() => handleAITurn(), 800);
+  const handlePassAfterDraw = () => {
+    if (!gameRef.current) return;
+    gameRef.current.passAfterDraw(0);
+    updateGameState();
+    if (gameRef.current.currentTurn === 1) {
+      setTimeout(() => handleAITurn(), 600);
+    }
   };
 
   const handleAITurn = () => {
@@ -149,49 +148,53 @@ const GamePage = () => {
 
     setIsAIThinking(true);
 
-    // AI turn with a small delay for realism
     setTimeout(() => {
       const engine = gameRef.current;
       const ai = aiRef.current;
+
+      if (engine.drawPenalty > 0) {
+        setIsAIThinking(false);
+        if (engine.currentTurn === 0) return;
+        return;
+      }
+
+      const validCards = engine.getValidCards(1);
       const state = engine.getGameState(1);
+      const shouldDraw = ai.shouldDraw(validCards, state);
 
-      // Handle pending pick 2
-      if (engine.pendingPick2 > 0) {
-        const drawn = engine.drawCards(1, engine.pendingPick2);
-        addLog(`Computer drew ${drawn.length} card(s)`);
-        updateGameState();
+      if (shouldDraw || validCards.length === 0) {
+        const result = engine.drawCard(1);
+        if (result.success) {
+          updateGameState();
+          if (result.isPlayable && ai.shouldPlayDrawnCard(result.card, state)) {
+            const symbol = result.card.value === 20 ? ai.chooseSymbol(engine.getGameState(1)) : null;
+            const playResult = engine.playCard(result.card, 1, symbol);
+            if (playResult.success) {
+              updateGameState();
+              if (playResult.gameOver) {
+                setIsAIThinking(false);
+                return;
+              }
+            }
+          }
+        } else {
+          updateGameState();
+        }
+
         setIsAIThinking(false);
-
         if (engine.currentTurn === 0) return;
-
         setTimeout(() => handleAITurn(), 500);
         return;
       }
 
-      const validMoves = engine.getValidMoves(1);
-      const shouldDraw = ai.shouldDraw(validMoves, { ...state, myHand: engine.players[1].hand });
+      const chosenCard = ai.chooseCard(validCards, state);
 
-      if (shouldDraw || validMoves.length === 0) {
-        const drawn = engine.drawCards(1, 1);
-        addLog(`Computer drew ${drawn.length} card(s)`);
-        updateGameState();
-        setIsAIThinking(false);
-
-        if (engine.currentTurn === 0) return;
-        setTimeout(() => handleAITurn(), 500);
-        return;
-      }
-
-      const chosenCard = ai.chooseCard(validMoves, { ...state, myHand: engine.players[1].hand });
-
-      if (chosenCard && (chosenCard.specialType === 'market' || chosenCard.specialType === 'whot')) {
-        const chosenSymbol = ai.chooseSymbol({ ...state, myHand: engine.players[1].hand });
+      if (chosenCard && chosenCard.value === 20) {
+        const chosenSymbol = ai.chooseSymbol(engine.getGameState(1));
         const result = engine.playCard(chosenCard, 1, chosenSymbol);
         if (result.success) {
-          addLog(`Computer played ${chosenCard.name} > ${chosenSymbol}`);
           updateGameState();
           if (result.gameOver) {
-            addLog('Computer wins!');
             setIsAIThinking(false);
             return;
           }
@@ -199,10 +202,8 @@ const GamePage = () => {
       } else if (chosenCard) {
         const result = engine.playCard(chosenCard, 1);
         if (result.success) {
-          addLog(`Computer played ${chosenCard.name}`);
           updateGameState();
           if (result.gameOver) {
-            addLog('Computer wins!');
             setIsAIThinking(false);
             return;
           }
@@ -219,16 +220,14 @@ const GamePage = () => {
 
   const handleRestart = () => {
     setShowStartScreen(true);
-    setSelectedCard(null);
-    setGameLog([]);
     setShowSymbolPicker(false);
     setPendingCard(null);
     setIsAIThinking(false);
+    setDealing(false);
     gameRef.current = null;
     aiRef.current = null;
   };
 
-  // Render start screen
   if (showStartScreen) {
     return (
       <div className="game-page">
@@ -285,7 +284,46 @@ const GamePage = () => {
     );
   }
 
-  // Render game over screen
+  if (dealing) {
+    return (
+      <div className="game-page">
+        <div className="dealing-overlay">
+          <div className="deal-animation">
+            <div className={`deal-deck ${dealPhase >= 1 ? 'deal-deck-shuffling' : ''}`}>
+              <div className="deal-card back"></div>
+              <div className="deal-card back"></div>
+              <div className="deal-card back"></div>
+            </div>
+            <div className="deal-players">
+              <div className="deal-player opponent-cards-deal">
+                <div className={`deal-card back ${dealPhase >= 2 ? 'dealt' : ''}`}></div>
+                <div className={`deal-card back ${dealPhase >= 2 ? 'dealt' : ''}`}></div>
+                <div className={`deal-card back ${dealPhase >= 2 ? 'dealt' : ''}`}></div>
+                <div className="deal-label">Computer</div>
+              </div>
+              <div className="deal-player player-cards-deal">
+                <div className={`deal-card ${dealPhase >= 3 && revealed ? 'front' : 'back'} ${dealPhase >= 2 ? 'dealt' : ''}`}>
+                  {dealPhase >= 3 && revealed && <span className="deal-card-value">?</span>}
+                </div>
+                <div className={`deal-card ${dealPhase >= 3 && revealed ? 'front' : 'back'} ${dealPhase >= 2 ? 'dealt' : ''}`}>
+                  {dealPhase >= 3 && revealed && <span className="deal-card-value">?</span>}
+                </div>
+                <div className={`deal-card back ${dealPhase >= 2 ? 'dealt' : ''}`}></div>
+                <div className="deal-label">You</div>
+              </div>
+            </div>
+            <div className="deal-text">
+              {dealPhase === 0 && 'Shuffling deck...'}
+              {dealPhase === 1 && 'Shuffling deck...'}
+              {dealPhase === 2 && 'Dealing cards...'}
+              {dealPhase === 3 && 'Ready!'}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (gameState?.gameStatus === 'finished') {
     const isWinner = gameState.winner === 0;
     return (
@@ -313,13 +351,12 @@ const GamePage = () => {
     );
   }
 
-  // Symbol picker modal
   if (showSymbolPicker) {
     return (
       <div className="symbol-picker-overlay">
         <div className="symbol-picker-modal">
           <h2>Choose a Symbol</h2>
-          <p>Select the symbol for your {pendingCard?.name} card</p>
+          <p>Select the symbol for your Whot card</p>
           <div className="symbol-options">
             {SYMBOLS.map(sym => (
               <button
@@ -339,7 +376,6 @@ const GamePage = () => {
 
   return (
     <div className="game-page">
-      {/* Game Header */}
       <div className="game-header">
         <button className="game-back-btn" onClick={() => navigate('/')}>
           <FaArrowLeft />
@@ -348,6 +384,9 @@ const GamePage = () => {
           <div className="game-status">
             {gameState?.currentTurn === 0 ? 'Your Turn' : "Opponent's Turn"}
             {isAIThinking && <span className="thinking-dots"> thinking<span>.</span><span>.</span><span>.</span></span>}
+            {gameState?.drawPenalty > 0 && gameState?.currentTurn === 0 && (
+              <span className="draw-penalty-warning"> (Draw {gameState.drawPenalty}!)</span>
+            )}
           </div>
           <div className="game-symbol-display">
             Symbol: <strong>{gameState?.currentSymbol ? SYMBOLS.find(s => s.id === gameState.currentSymbol)?.symbol || '⭐' : '-'}</strong>
@@ -361,32 +400,23 @@ const GamePage = () => {
       </div>
 
       <div className="game-layout">
-        {/* Opponent Area */}
         <OpponentArea
           players={gameState?.players || []}
           currentPlayerId={0}
-          currentTurn={gameState?.currentTurn}
         />
 
-        {/* Game Board */}
         <div className="game-board">
           <div className="board-center">
-            {/* Draw pile */}
             <div className="draw-pile" onClick={handleDrawCard}>
               <div className="draw-pile-stack">
                 <div className="draw-pile-card back"></div>
                 <div className="draw-pile-card back"></div>
                 <div className="draw-pile-card back"></div>
               </div>
-              <span className="draw-label">
-                {gameState?.pendingPick2 > 0
-                  ? `Draw ${gameState.pendingPick2}`
-                  : 'Draw'}
-              </span>
+              <span className="draw-label">Draw</span>
               <span className="draw-count">{gameState?.deckSize || 0} left</span>
             </div>
 
-            {/* Played card */}
             <div className="played-card-area">
               {gameState?.topCard ? (
                 <Card card={gameState.topCard} disabled small={false} />
@@ -397,26 +427,18 @@ const GamePage = () => {
               )}
             </div>
 
-            {/* Last action */}
             <div className="last-action">{gameState?.lastAction}</div>
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="game-actions">
-          {selectedCard && gameState?.currentTurn === 0 && (
-            <button className="play-card-btn" onClick={handlePlayCard}>
-              <FaStepForward /> Play Card
+        {gameState?.canPlayDrawnCard && gameState?.currentTurn === 0 && (
+          <div className="game-actions">
+            <button className="pass-btn" onClick={handlePassAfterDraw}>
+              Pass
             </button>
-          )}
-          {gameState?.currentTurn === 0 && gameState?.pendingPick2 === 0 && !selectedCard && (
-            <button className="draw-card-btn" onClick={handleDrawCard}>
-              Draw Card
-            </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Player Hand */}
         <div className="player-area">
           <div className="player-label">
             Your Hand ({gameState?.myHand?.length || 0} cards)
@@ -424,23 +446,9 @@ const GamePage = () => {
           <PlayerHand
             cards={gameState?.myHand || []}
             onCardClick={handleCardClick}
-            selectedCard={selectedCard}
-            disabled={gameState?.currentTurn !== 0 || isAIThinking}
-            validMoves={gameRef.current?.getValidMoves(0) || []}
+            disabled={gameState?.currentTurn !== 0 || isAIThinking || gameState?.drawPenalty > 0}
+            validMoves={gameState?.validMoves || []}
           />
-        </div>
-      </div>
-
-      {/* Game Log */}
-      <div className="game-log">
-        <div className="game-log-header">Game Log</div>
-        <div className="game-log-entries">
-          {gameLog.map((entry, i) => (
-            <div key={i} className="log-entry">
-              <span className="log-time">{entry.time}</span>
-              <span className="log-text">{entry.text}</span>
-            </div>
-          ))}
         </div>
       </div>
     </div>

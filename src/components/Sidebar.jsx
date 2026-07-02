@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { FaHome, FaGamepad, FaTrophy, FaUser, FaCog, FaSignOutAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe } from 'react-icons/fa';
+import { useAuthContext } from '../context/AuthContext';
+import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe } from 'react-icons/fa';
 import './Sidebar.css';
 
 const navItems = [
-  { path: '/', icon: <FaHome />, label: 'Home' },
+  { path: '/home', icon: <FaHome />, label: 'Home' },
   { path: '/play', icon: <FaGamepad />, label: 'Play', children: [
     { path: '/play/ai', icon: <FaRobot />, label: 'vs Computer' },
     { path: '/play/online', icon: <FaGlobe />, label: 'vs Players' },
@@ -19,6 +20,7 @@ const Sidebar = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
+  const { user, logout } = useAuthContext();
 
   const handleNav = (path) => {
     navigate(path);
@@ -31,7 +33,7 @@ const Sidebar = ({ children }) => {
       {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
 
       {/* Mobile hamburger */}
-      <button className="mobile-hamburger" onClick={() => setMobileOpen(true)}>
+      <button className={`mobile-hamburger ${mobileOpen ? 'hidden' : ''}`} onClick={() => setMobileOpen(true)}>
         <FaBars />
       </button>
 
@@ -89,10 +91,17 @@ const Sidebar = ({ children }) => {
             <span className="nav-icon">{isDark ? <FaSun /> : <FaMoon />}</span>
             {!collapsed && <span className="nav-label">{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
           </button>
-          <button className="nav-item logout-btn" onClick={() => navigate('/login')}>
-            <span className="nav-icon"><FaSignOutAlt /></span>
-            {!collapsed && <span className="nav-label">Sign In</span>}
-          </button>
+          {user ? (
+            <button className="nav-item logout-btn" onClick={() => { logout(); navigate('/login'); }}>
+              <span className="nav-icon"><FaSignOutAlt /></span>
+              {!collapsed && <span className="nav-label">Sign Out</span>}
+            </button>
+          ) : (
+            <button className="nav-item logout-btn" onClick={() => navigate('/login')}>
+              <span className="nav-icon"><FaSignInAlt /></span>
+              {!collapsed && <span className="nav-label">Sign In</span>}
+            </button>
+          )}
         </div>
       </aside>
 
