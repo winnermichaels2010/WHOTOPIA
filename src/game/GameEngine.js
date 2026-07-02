@@ -13,7 +13,6 @@ class GameEngine {
     this.repeatTurn = false;
     this.lastAction = null;
     this.direction = 1;
-    this.requiredMarketDraws = {};
   }
 
   initGame(playerNames, cardsPerPlayer = 5) {
@@ -184,9 +183,9 @@ class GameEngine {
         break;
 
       case 'generalMarket':
+        this.drawPenalty += 1;
         effects.generalMarket = true;
-        this._forceAllOtherDraw(playerId, 1);
-        this.lastAction = 'General Market! All other players draw 1 card.';
+        this.lastAction = 'General Market! Next player draws 1 card.';
         break;
 
       default:
@@ -194,20 +193,6 @@ class GameEngine {
     }
 
     return effects;
-  }
-
-  _forceAllOtherDraw(exceptPlayerId, count) {
-    for (const player of this.players) {
-      if (player.id !== exceptPlayerId && player.isActive) {
-        for (let i = 0; i < count; i++) {
-          const card = this.deck.drawCard();
-          if (card) {
-            player.hand.push(card);
-            player.cardCount = player.hand.length;
-          }
-        }
-      }
-    }
   }
 
   advanceTurn() {
@@ -230,11 +215,7 @@ class GameEngine {
     this.currentTurn = next;
 
     if (this.drawPenalty > 0) {
-      const penalty = this.drawPenalty;
-      this.drawPenalty = 0;
-      this._forceDraw(this.currentTurn, penalty);
-      this.lastAction = `${this.players[this.currentTurn].name} drew ${penalty} penalty card(s) and loses turn.`;
-      this.advanceTurn();
+      this.lastAction = `${this.players[this.currentTurn].name} must draw ${this.drawPenalty} penalty card(s)!`;
       return;
     }
 
@@ -246,17 +227,6 @@ class GameEngine {
     }
   }
 
-  _forceDraw(playerId, count) {
-    const player = this.players[playerId];
-    for (let i = 0; i < count; i++) {
-      const card = this.deck.drawCard();
-      if (card) {
-        player.hand.push(card);
-        player.cardCount = player.hand.length;
-      }
-    }
-  }
-
   drawCard(playerId) {
     if (this.gameStatus !== 'playing') {
       return { success: false, error: 'Game is not in progress', cards: [] };
@@ -264,8 +234,24 @@ class GameEngine {
     if (playerId !== this.currentTurn) {
       return { success: false, error: 'Not your turn', cards: [] };
     }
+
     if (this.drawPenalty > 0) {
-      return { success: false, error: 'You must draw the penalty cards automatically', cards: [] };
+      const card = this.deck.drawCard();
+      if (!card) {
+        return { success: false, error: 'Deck is empty', cards: [] };
+      }
+      this.players[playerId].hand.push(card);
+      this.players[playerId].cardCount = this.players[playerId].hand.length;
+      this.drawPenalty--;
+
+      if (this.drawPenalty === 0) {
+        this.lastAction = `${this.players[playerId].name} drew all penalty cards and loses turn.`;
+        this.advanceTurn();
+      } else {
+        this.lastAction = `${this.players[playerId].name} drew a penalty card (${this.drawPenalty} more to draw).`;
+      }
+
+      return { success: true, card, isPlayable: false, cards: [card] };
     }
 
     const card = this.deck.drawCard();

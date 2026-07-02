@@ -1,11 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import GameEngine from '../game/GameEngine';
 import AIEngine from '../game/AIEngine';
 import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
-import { FaArrowLeft, FaPlay, FaRedo, FaRobot, FaGlobe, FaTrophy, FaMeh } from 'react-icons/fa';
+import { FaArrowLeft, FaRedo, FaRobot, FaGlobe, FaTrophy, FaMeh } from 'react-icons/fa';
 import './GamePage.css';
 
 const SYMBOLS = [
@@ -37,6 +37,8 @@ const GamePage = () => {
   const [dealing, setDealing] = useState(false);
   const [dealPhase, setDealPhase] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [wrongMoveMessage, setWrongMoveMessage] = useState(null);
+  const wrongMoveTimeout = useRef(null);
 
   const updateGameState = useCallback(() => {
     if (gameRef.current) {
@@ -45,7 +47,7 @@ const GamePage = () => {
     }
   }, []);
 
-  const startGame = () => {
+  const startGame = (diff) => {
     const engine = new GameEngine();
     gameRef.current = engine;
 
@@ -55,7 +57,7 @@ const GamePage = () => {
     engine.initGame([playerName, aiName], 5);
     if (mode === 'ai') {
       engine.players[1].isAI = true;
-      aiRef.current = new AIEngine(difficulty);
+      aiRef.current = new AIEngine(diff || difficulty);
     }
 
     setShowStartScreen(false);
@@ -83,6 +85,14 @@ const GamePage = () => {
     if (!gameRef.current || gameRef.current.gameStatus !== 'playing') return;
     if (gameRef.current.currentTurn !== 0) return;
     if (gameRef.current.drawPenalty > 0) return;
+
+    const validation = gameRef.current.canPlayCard(card, 0);
+    if (!validation.valid) {
+      if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
+      setWrongMoveMessage('Wrong move 😜');
+      wrongMoveTimeout.current = setTimeout(() => setWrongMoveMessage(null), 1500);
+      return;
+    }
 
     if (card.value === 20) {
       setPendingCard(card);
@@ -132,15 +142,6 @@ const GamePage = () => {
     }
   };
 
-  const handlePassAfterDraw = () => {
-    if (!gameRef.current) return;
-    gameRef.current.passAfterDraw(0);
-    updateGameState();
-    if (gameRef.current.currentTurn === 1) {
-      setTimeout(() => handleAITurn(), 600);
-    }
-  };
-
   const handleAITurn = () => {
     if (!gameRef.current || gameRef.current.gameStatus !== 'playing') return;
     if (gameRef.current.currentTurn !== 1) return;
@@ -153,8 +154,14 @@ const GamePage = () => {
       const ai = aiRef.current;
 
       if (engine.drawPenalty > 0) {
+        const result = engine.drawCard(1);
+        if (result.success) {
+          updateGameState();
+        }
         setIsAIThinking(false);
-        if (engine.currentTurn === 0) return;
+        if (engine.currentTurn === 1 && engine.gameStatus === 'playing') {
+          setTimeout(() => handleAITurn(), 500);
+        }
         return;
       }
 
@@ -218,12 +225,20 @@ const GamePage = () => {
     }, 1000);
   };
 
+  useEffect(() => {
+    return () => {
+      if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
+    };
+  }, []);
+
   const handleRestart = () => {
     setShowStartScreen(true);
     setShowSymbolPicker(false);
     setPendingCard(null);
     setIsAIThinking(false);
     setDealing(false);
+    setWrongMoveMessage(null);
+    if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
     gameRef.current = null;
     aiRef.current = null;
   };
@@ -257,7 +272,10 @@ const GamePage = () => {
                     <button
                       key={d.id}
                       className={`difficulty-btn ${difficulty === d.id ? 'active' : ''}`}
-                      onClick={() => setDifficulty(d.id)}
+                      onClick={() => {
+                        setDifficulty(d.id);
+                        startGame(d.id);
+                      }}
                     >
                       <span className="diff-name">{d.name}</span>
                       <span className="diff-desc">{d.desc}</span>
@@ -266,14 +284,6 @@ const GamePage = () => {
                 </div>
               </div>
             )}
-
-            <button
-              className="start-game-btn"
-              onClick={startGame}
-              disabled={mode !== 'ai'}
-            >
-              <FaPlay /> Start Game
-            </button>
 
             {mode !== 'ai' && (
               <div className="coming-soon-badge">Coming Soon</div>
@@ -353,8 +363,11 @@ const GamePage = () => {
 
   if (showSymbolPicker) {
     return (
-      <div className="symbol-picker-overlay">
-        <div className="symbol-picker-modal">
+      <div className="symbol-picker-overlay" onClick={() => {
+        setShowSymbolPicker(false);
+        setPendingCard(null);
+      }}>
+        <div className="symbol-picker-modal" onClick={e => e.stopPropagation()}>
           <h2>Choose a Symbol</h2>
           <p>Select the symbol for your Whot card</p>
           <div className="symbol-options">
@@ -369,6 +382,12 @@ const GamePage = () => {
               </button>
             ))}
           </div>
+          <button className="symbol-picker-back-btn" onClick={() => {
+            setShowSymbolPicker(false);
+            setPendingCard(null);
+          }}>
+            <FaArrowLeft /> Go Back
+          </button>
         </div>
       </div>
     );
@@ -431,23 +450,17 @@ const GamePage = () => {
           </div>
         </div>
 
-        {gameState?.canPlayDrawnCard && gameState?.currentTurn === 0 && (
-          <div className="game-actions">
-            <button className="pass-btn" onClick={handlePassAfterDraw}>
-              Pass
-            </button>
-          </div>
-        )}
-
         <div className="player-area">
           <div className="player-label">
             Your Hand ({gameState?.myHand?.length || 0} cards)
           </div>
+          {wrongMoveMessage && (
+            <div className="wrong-move-message">{wrongMoveMessage}</div>
+          )}
           <PlayerHand
             cards={gameState?.myHand || []}
             onCardClick={handleCardClick}
             disabled={gameState?.currentTurn !== 0 || isAIThinking || gameState?.drawPenalty > 0}
-            validMoves={gameState?.validMoves || []}
           />
         </div>
       </div>

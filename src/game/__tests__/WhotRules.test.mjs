@@ -148,14 +148,12 @@ describe('Whot Game Rules', () => {
   });
 
   describe('General Market', () => {
-    it('all other players draw 1 card', () => {
+    it('sets draw penalty of 1 for next player', () => {
       const engine = makeGame(['Alice', 'Bob', 'Charlie'], 1);
       const gmCard = addCardToHand(engine, 0, 14, engine.currentSymbol);
-      const bobCount = engine.players[1].cardCount;
-      const charlieCount = engine.players[2].cardCount;
       engine.playCard(gmCard, 0);
-      expect(engine.players[1].cardCount).toBe(bobCount + 1);
-      expect(engine.players[2].cardCount).toBe(charlieCount + 1);
+      expect(engine.drawPenalty).toBe(1);
+      expect(engine.currentTurn).toBe(1);
     });
   });
 
@@ -172,12 +170,12 @@ describe('Whot Game Rules', () => {
   });
 
   describe('Draw Penalty', () => {
-    it('adds penalty cards to next player', () => {
+    it('sets draw penalty of 2 for next player', () => {
       const engine = makeGame(['Alice', 'Bob'], 2);
       const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
-      const bobCount = engine.players[1].cardCount;
       engine.playCard(p2, 0);
-      expect(engine.players[1].cardCount).toBeGreaterThan(bobCount);
+      expect(engine.drawPenalty).toBe(2);
+      expect(engine.currentTurn).toBe(1);
     });
 
     it('prevents play for penalized player', () => {
@@ -187,6 +185,22 @@ describe('Whot Game Rules', () => {
       const card = engine.players[1].hand[0];
       const result = engine.canPlayCard(card, 1);
       expect(result.valid).toBe(false);
+    });
+
+    it('penalized player draws one card per click', () => {
+      const engine = makeGame(['Alice', 'Bob'], 2);
+      const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
+      engine.playCard(p2, 0);
+      expect(engine.drawPenalty).toBe(2);
+      const bobCount = engine.players[1].cardCount;
+      engine.drawCard(1);
+      expect(engine.players[1].cardCount).toBe(bobCount + 1);
+      expect(engine.drawPenalty).toBe(1);
+      expect(engine.currentTurn).toBe(1);
+      engine.drawCard(1);
+      expect(engine.players[1].cardCount).toBe(bobCount + 2);
+      expect(engine.drawPenalty).toBe(0);
+      expect(engine.currentTurn).toBe(0);
     });
   });
 
