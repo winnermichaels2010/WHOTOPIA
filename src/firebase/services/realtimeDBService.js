@@ -41,7 +41,8 @@ import {
   push,
   serverTimestamp,
   onDisconnect,
-  off
+  off,
+  runTransaction
 } from 'firebase/database';
 import { realtimeDB } from '../index.js';
 
@@ -148,11 +149,11 @@ export const addPlayerToRoom = async (roomId, playerId, playerData) => {
     joinedAt: serverTimestamp()
   });
   
-  // Increment player count
-  const roomRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/currentPlayers`);
-  const snapshot = await get(roomRef);
-  const currentCount = snapshot.val() || 0;
-  await set(roomRef, currentCount + 1);
+  // Atomically increment player count (prevents race conditions)
+  const countRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/currentPlayers`);
+  await runTransaction(countRef, (currentCount) => {
+    return (currentCount || 0) + 1;
+  });
 };
 
 /**
@@ -165,11 +166,11 @@ export const removePlayerFromRoom = async (roomId, playerId) => {
   const playerRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/players/${playerId}`);
   await remove(playerRef);
   
-  // Decrement player count
-  const roomRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/currentPlayers`);
-  const snapshot = await get(roomRef);
-  const currentCount = snapshot.val() || 0;
-  await set(roomRef, Math.max(0, currentCount - 1));
+  // Atomically decrement player count (prevents race conditions)
+  const countRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/currentPlayers`);
+  await runTransaction(countRef, (currentCount) => {
+    return Math.max(0, (currentCount || 0) - 1);
+  });
 };
 
 /**

@@ -1,22 +1,12 @@
-/**
- * ProtectedRoute Component
- * 
- * Protects routes that require authentication.
- * Redirects unauthenticated users to the login page.
- */
-
 import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '../../context/AuthContext';
+import LoadingSpinner from '../LoadingSpinner';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuthContext();
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner">Loading...</div>
-      </div>
-    );
+    return <LoadingSpinner text="Authenticating..." />;
   }
 
   if (!user) {

@@ -26,13 +26,13 @@ const HomePage = () => {
           <span className="dash-card-action">Play Now →</span>
         </div>
 
-        <div className="dash-card play-card disabled">
+        <div className="dash-card play-card" onClick={() => navigate('/lobby')}>
           <div className="dash-card-icon"><FaGlobe /></div>
           <div className="dash-card-body">
             <h3>Play Online</h3>
             <p>Join or create a room and play against real opponents.</p>
           </div>
-          <span className="dash-card-badge">Coming Soon</span>
+          <span className="dash-card-action">Play Now →</span>
         </div>
 
         <div className="dash-card stat-card">

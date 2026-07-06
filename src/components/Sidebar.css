@@ -49,7 +49,7 @@
 .logo-text {
   font-size: 1.35rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent-red), var(--accent-brown));
+  background: var(--accent-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -202,7 +202,7 @@
   padding: 0.6rem;
   border-radius: 0.75rem;
   cursor: pointer;
-  box-shadow: 0 2px 8px var(--shadow-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Mobile Overlay */

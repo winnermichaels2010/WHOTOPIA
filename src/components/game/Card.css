@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  box-shadow: 0 2px 8px var(--shadow-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: border-color 0.3s ease, background 0.3s ease;
 }
 

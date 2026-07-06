@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import GameEngine from '../game/GameEngine';
 import AIEngine from '../game/AIEngine';
 import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
-import { FaArrowLeft, FaRedo, FaRobot, FaGlobe, FaTrophy, FaMeh } from 'react-icons/fa';
+import { onGameStateChange, setGameState } from '../firebase/services/realtimeDBService.js';
+import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaTrophy, FaMeh } from 'react-icons/fa';
 import './GamePage.css';
 
 const SYMBOLS = [
@@ -23,12 +24,16 @@ const DIFFICULTIES = [
 ];
 
 const GamePage = () => {
-  const { mode } = useParams();
+  const { mode, roomId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const gameRef = useRef(null);
   const aiRef = useRef(null);
+  const dbUnsubRef = useRef(null);
+  const isHost = location.state?.isHost === true;
+  const isOnline = !!roomId;
 
-  const [gameState, setGameState] = useState(null);
+  const [gameState, setGs] = useState(null);
   const [showSymbolPicker, setShowSymbolPicker] = useState(false);
   const [pendingCard, setPendingCard] = useState(null);
   const [showStartScreen, setShowStartScreen] = useState(true);
@@ -38,14 +43,21 @@ const GamePage = () => {
   const [dealPhase, setDealPhase] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [wrongMoveMessage, setWrongMoveMessage] = useState(null);
+  const [waitingForGame, setWaitingForGame] = useState(false);
   const wrongMoveTimeout = useRef(null);
 
   const updateGameState = useCallback(() => {
     if (gameRef.current) {
       const state = gameRef.current.getGameState(0);
-      setGameState({ ...state });
+      setGs({ ...state });
     }
   }, []);
+
+  const syncStateToDB = useCallback(() => {
+    if (!isOnline || !roomId || !gameRef.current) return;
+    const state = gameRef.current.exportState();
+    setGameState(roomId, state);
+  }, [isOnline, roomId]);
 
   const startGame = (diff) => {
     const engine = new GameEngine();
@@ -103,7 +115,11 @@ const GamePage = () => {
     const result = gameRef.current.playCard(card, 0);
     if (result.success) {
       updateGameState();
+      syncStateToDB();
       if (result.gameOver) {
+        return;
+      }
+      if (isOnline && gameRef.current.currentTurn === 1) {
         return;
       }
       if (gameRef.current.currentTurn === 1) {
@@ -121,7 +137,11 @@ const GamePage = () => {
 
     if (result.success) {
       updateGameState();
+      syncStateToDB();
       if (result.gameOver) {
+        return;
+      }
+      if (isOnline && gameRef.current.currentTurn === 1) {
         return;
       }
       if (gameRef.current.currentTurn === 1) {
@@ -136,6 +156,8 @@ const GamePage = () => {
     const result = gameRef.current.drawCard(0);
     if (result.success) {
       updateGameState();
+      syncStateToDB();
+      if (isOnline) return;
       if (!result.isPlayable && gameRef.current.currentTurn === 1) {
         setTimeout(() => handleAITurn(), 600);
       }
@@ -231,19 +253,90 @@ const GamePage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOnline || !roomId) return;
+
+    setShowStartScreen(false);
+    setWaitingForGame(true);
+
+    dbUnsubRef.current = onGameStateChange(roomId, (snapshot) => {
+      if (snapshot.exists()) {
+        const dbState = snapshot.val();
+        const cleanState = { ...dbState };
+        delete cleanState.lastUpdated;
+        if (gameRef.current) {
+          gameRef.current.importState(cleanState);
+          updateGameState();
+        } else {
+          const engine = new GameEngine();
+          engine.importState(cleanState);
+          gameRef.current = engine;
+          setWaitingForGame(false);
+          setShowStartScreen(false);
+          updateGameState();
+        }
+      } else if (isHost) {
+        const engine = new GameEngine();
+        gameRef.current = engine;
+        engine.initGame(['You', 'Opponent'], 5);
+        engine.players[0].name = 'You';
+        engine.players[1].name = 'Opponent';
+
+        const state = engine.exportState();
+        setGameState(roomId, state);
+        setWaitingForGame(false);
+        updateGameState();
+      }
+    });
+
+    return () => {
+      if (dbUnsubRef.current) {
+        dbUnsubRef.current();
+        dbUnsubRef.current = null;
+      }
+    };
+  }, [isOnline, roomId, isHost, updateGameState]);
+
   const handleRestart = () => {
+    if (dbUnsubRef.current) {
+      dbUnsubRef.current();
+      dbUnsubRef.current = null;
+    }
     setShowStartScreen(true);
     setShowSymbolPicker(false);
     setPendingCard(null);
     setIsAIThinking(false);
     setDealing(false);
+    setWaitingForGame(false);
     setWrongMoveMessage(null);
     if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
     gameRef.current = null;
     aiRef.current = null;
+    if (isOnline) {
+      navigate('/lobby');
+    }
   };
 
   if (showStartScreen) {
+    if (isOnline) {
+      return (
+        <div className="game-page">
+          <div className="game-start-screen">
+            <button className="game-back-btn" onClick={() => navigate('/lobby')}>
+              <FaArrowLeft /> Back
+            </button>
+            <div className="start-content">
+              <div className="start-icon">
+                <FaSpinner className="spinner-icon" />
+              </div>
+              <h1 className="start-title">Joining Game</h1>
+              <p className="start-subtitle">Connecting to game server...</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="game-page">
         <div className="game-start-screen">
@@ -253,41 +346,50 @@ const GamePage = () => {
 
           <div className="start-content">
             <div className="start-icon">
-              {mode === 'ai' ? <FaRobot /> : <FaGlobe />}
+              <FaRobot />
             </div>
-            <h1 className="start-title">
-              {mode === 'ai' ? 'Play vs Computer' : 'Online Multiplayer'}
-            </h1>
+            <h1 className="start-title">Play vs Computer</h1>
             <p className="start-subtitle">
-              {mode === 'ai'
-                ? 'Challenge the computer in a game of Whot. Choose your difficulty level!'
-                : 'Coming soon! Play against friends online.'}
+              Challenge the computer in a game of Whot. Choose your difficulty level!
             </p>
 
-            {mode === 'ai' && (
-              <div className="difficulty-selector">
-                <h3>Select Difficulty</h3>
-                <div className="difficulty-options">
-                  {DIFFICULTIES.map(d => (
-                    <button
-                      key={d.id}
-                      className={`difficulty-btn ${difficulty === d.id ? 'active' : ''}`}
-                      onClick={() => {
-                        setDifficulty(d.id);
-                        startGame(d.id);
-                      }}
-                    >
-                      <span className="diff-name">{d.name}</span>
-                      <span className="diff-desc">{d.desc}</span>
-                    </button>
-                  ))}
-                </div>
+            <div className="difficulty-selector">
+              <h3>Select Difficulty</h3>
+              <div className="difficulty-options">
+                {DIFFICULTIES.map(d => (
+                  <button
+                    key={d.id}
+                    className={`difficulty-btn ${difficulty === d.id ? 'active' : ''}`}
+                    onClick={() => {
+                      setDifficulty(d.id);
+                      startGame(d.id);
+                    }}
+                  >
+                    <span className="diff-name">{d.name}</span>
+                    <span className="diff-desc">{d.desc}</span>
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            {mode !== 'ai' && (
-              <div className="coming-soon-badge">Coming Soon</div>
-            )}
+  if (isOnline && waitingForGame) {
+    return (
+      <div className="game-page">
+        <div className="game-start-screen">
+          <button className="game-back-btn" onClick={() => navigate('/lobby')}>
+            <FaArrowLeft /> Back
+          </button>
+          <div className="start-content">
+            <div className="start-icon">
+              <FaSpinner className="spinner-icon" />
+            </div>
+            <h1 className="start-title">Waiting for opponent...</h1>
+            <p className="start-subtitle">The game will start once your opponent connects.</p>
           </div>
         </div>
       </div>
@@ -336,6 +438,7 @@ const GamePage = () => {
 
   if (gameState?.gameStatus === 'finished') {
     const isWinner = gameState.winner === 0;
+    const opponentName = isOnline ? 'Opponent' : 'the computer';
     return (
       <div className="game-page">
         <div className="game-over-screen">
@@ -344,13 +447,15 @@ const GamePage = () => {
             <h1 className="game-over-title">{isWinner ? 'You Win!' : 'You Lose!'}</h1>
             <p className="game-over-subtitle">
               {isWinner
-                ? 'Congratulations! You defeated the computer!'
-                : 'Better luck next time! Try again.'}
+                ? `Congratulations! You defeated ${opponentName}!`
+                : `Better luck next time! ${opponentName.charAt(0).toUpperCase() + opponentName.slice(1)} got you.`}
             </p>
             <div className="game-over-actions">
-              <button className="game-over-btn primary" onClick={handleRestart}>
-                <FaRedo /> Play Again
-              </button>
+              {!isOnline && (
+                <button className="game-over-btn primary" onClick={handleRestart}>
+                  <FaRedo /> Play Again
+                </button>
+              )}
               <button className="game-over-btn secondary" onClick={() => navigate('/')}>
                 <FaArrowLeft /> Back to Home
               </button>
@@ -396,26 +501,28 @@ const GamePage = () => {
   return (
     <div className="game-page">
       <div className="game-header">
-        <button className="game-back-btn" onClick={() => navigate('/')}>
-          <FaArrowLeft />
-        </button>
-        <div className="game-info-bar">
-          <div className="game-status">
-            {gameState?.currentTurn === 0 ? 'Your Turn' : "Opponent's Turn"}
-            {isAIThinking && <span className="thinking-dots"> thinking<span>.</span><span>.</span><span>.</span></span>}
-            {gameState?.drawPenalty > 0 && gameState?.currentTurn === 0 && (
-              <span className="draw-penalty-warning"> (Draw {gameState.drawPenalty}!)</span>
-            )}
+          <button className="game-back-btn" onClick={() => navigate(isOnline ? '/lobby' : '/')}>
+            <FaArrowLeft />
+          </button>
+          <div className="game-info-bar">
+            <div className="game-status">
+              {gameState?.currentTurn === 0 ? 'Your Turn' : "Opponent's Turn"}
+              {isAIThinking && <span className="thinking-dots"> thinking<span>.</span><span>.</span><span>.</span></span>}
+              {gameState?.drawPenalty > 0 && gameState?.currentTurn === 0 && (
+                <span className="draw-penalty-warning"> (Draw {gameState.drawPenalty}!)</span>
+              )}
+            </div>
+            <div className="game-symbol-display">
+              Symbol: <strong>{gameState?.currentSymbol ? SYMBOLS.find(s => s.id === gameState.currentSymbol)?.symbol || '⭐' : '-'}</strong>
+            </div>
+            <div className="game-actions-header">
+              {!isOnline && (
+                <button className="header-action-btn" onClick={handleRestart} title="Restart">
+                  <FaRedo />
+                </button>
+              )}
+            </div>
           </div>
-          <div className="game-symbol-display">
-            Symbol: <strong>{gameState?.currentSymbol ? SYMBOLS.find(s => s.id === gameState.currentSymbol)?.symbol || '⭐' : '-'}</strong>
-          </div>
-          <div className="game-actions-header">
-            <button className="header-action-btn" onClick={handleRestart} title="Restart">
-              <FaRedo />
-            </button>
-          </div>
-        </div>
       </div>
 
       <div className="game-layout">

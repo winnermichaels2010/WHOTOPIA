@@ -45,7 +45,7 @@
 
 .dash-card.play-card:hover {
   border-color: var(--accent-red);
-  box-shadow: 0 4px 20px var(--shadow-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
 }
 

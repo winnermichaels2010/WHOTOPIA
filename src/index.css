@@ -1,45 +1,51 @@
-/* CSS Variables for Light/Dark Theme */
 :root {
-  /* Light theme (default) */
-  --bg-primary: #fef9f5;
-  --bg-secondary: #fff5ef;
+  --bg-primary: #faf8f5;
+  --bg-secondary: #f5f0eb;
   --sidebar-bg: #ffffff;
   --card-bg: #ffffff;
-  --border-color: rgba(139, 69, 19, 0.12);
+  --border-color: rgba(0, 0, 0, 0.08);
   --hover-bg: rgba(230, 57, 70, 0.06);
   --active-bg: rgba(230, 57, 70, 0.1);
-  --shadow-color: rgba(139, 69, 19, 0.08);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
 
-  --text-primary: #2c1810;
-  --text-secondary: #6b4c3b;
-  --text-muted: #a08070;
+  --text-primary: #1a1a2e;
+  --text-secondary: #555770;
+  --text-muted: #8e8ea0;
 
-  --accent-red: #c1121f;
-  --accent-brown: #8B4513;
-  --accent-gradient: linear-gradient(135deg, #c1121f, #8B4513);
-  --auth-bg: linear-gradient(135deg, #fef9f5 0%, #f5e6d0 50%, #efd6b8 100%);
+  --accent-red: #e63946;
+  --accent-coral: #f72585;
+  --accent-gradient: linear-gradient(135deg, #e63946, #f72585);
+  --accent-gradient-soft: linear-gradient(135deg, rgba(230, 57, 70, 0.1), rgba(247, 37, 133, 0.1));
+  --auth-bg: linear-gradient(135deg, #faf8f5 0%, #f0e6d6 50%, #e8dccc 100%);
 }
 
 [data-theme="dark"] {
-  --bg-primary: #120808;
-  --bg-secondary: #1a0e0e;
-  --sidebar-bg: #150b0b;
-  --card-bg: #1f1212;
-  --border-color: rgba(230, 57, 70, 0.15);
-  --hover-bg: rgba(230, 57, 70, 0.08);
-  --active-bg: rgba(230, 57, 70, 0.15);
-  --shadow-color: rgba(0, 0, 0, 0.3);
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --sidebar-bg: #16162a;
+  --card-bg: #1e1e36;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --hover-bg: rgba(230, 57, 70, 0.1);
+  --active-bg: rgba(230, 57, 70, 0.18);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.35);
 
-  --text-primary: #f5e6d0;
-  --text-secondary: #c4a898;
-  --text-muted: #8a6a5a;
+  --text-primary: #f0eef6;
+  --text-secondary: #b8b5cc;
+  --text-muted: #7a7894;
 
-  --accent-red: #e63946;
-  --accent-brown: #a0522d;
-  --auth-bg: linear-gradient(135deg, #120808 0%, #1f1212 50%, #2c1810 100%);
+  --accent-red: #ef4444;
+  --accent-coral: #f472b6;
+  --accent-gradient: linear-gradient(135deg, #ef4444, #f472b6);
+  --accent-gradient-soft: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(244, 114, 182, 0.12));
+  --auth-bg: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16162a 100%);
 }
 
-/* Base Reset */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -70,8 +76,9 @@ a {
   text-decoration: none;
   transition: color 0.2s;
 }
+
 a:hover {
-  color: var(--accent-brown);
+  color: var(--accent-coral);
 }
 
 button {
@@ -83,17 +90,19 @@ img {
   height: auto;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }

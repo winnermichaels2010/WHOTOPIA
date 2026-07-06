@@ -149,7 +149,7 @@ class GameEngine {
     };
   }
 
-  applySpecialEffects(card, playerId) {
+  applySpecialEffects(card, _playerId) {
     const effects = {
       holdOn: false,
       drawPenaltyAdded: 0,
@@ -346,6 +346,50 @@ class GameEngine {
       msg += ` → ${chosenSymbol}`;
     }
     return msg;
+  }
+
+  exportState() {
+    return {
+      players: this.players.map(p => ({
+        ...p,
+        hand: p.hand.map(c => ({ ...c })),
+      })),
+      currentTurn: this.currentTurn,
+      currentSymbol: this.currentSymbol,
+      gameStatus: this.gameStatus,
+      winner: this.winner,
+      drawPenalty: this.drawPenalty,
+      skipTurn: this.skipTurn,
+      repeatTurn: this.repeatTurn,
+      lastAction: this.lastAction,
+      direction: this.direction,
+      deck: {
+        cards: this.deck.cards.map(c => ({ ...c })),
+        discardPile: this.deck.discardPile.map(c => ({ ...c })),
+      },
+      _drawnCardPlayable: !!this._drawnCardPlayable,
+      _lastDrawnCard: this._lastDrawnCard ? { ...this._lastDrawnCard } : null,
+    };
+  }
+
+  importState(state) {
+    this.players = state.players.map(p => ({
+      ...p,
+      hand: p.hand.map(c => ({ ...c })),
+    }));
+    this.currentTurn = state.currentTurn;
+    this.currentSymbol = state.currentSymbol;
+    this.gameStatus = state.gameStatus;
+    this.winner = state.winner;
+    this.drawPenalty = state.drawPenalty;
+    this.skipTurn = state.skipTurn;
+    this.repeatTurn = state.repeatTurn;
+    this.lastAction = state.lastAction;
+    this.direction = state.direction;
+    this.deck.cards = state.deck.cards.map(c => ({ ...c }));
+    this.deck.discardPile = state.deck.discardPile.map(c => ({ ...c }));
+    this._drawnCardPlayable = !!state._drawnCardPlayable;
+    this._lastDrawnCard = state._lastDrawnCard ? { ...state._lastDrawnCard } : null;
   }
 }
 

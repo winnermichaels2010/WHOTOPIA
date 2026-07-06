@@ -9,7 +9,7 @@ const navItems = [
   { path: '/home', icon: <FaHome />, label: 'Home' },
   { path: '/play', icon: <FaGamepad />, label: 'Play', children: [
     { path: '/play/ai', icon: <FaRobot />, label: 'vs Computer' },
-    { path: '/play/online', icon: <FaGlobe />, label: 'vs Players' },
+    { path: '/lobby', icon: <FaGlobe />, label: 'vs Players' },
   ]},
 ];
 

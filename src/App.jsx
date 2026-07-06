@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
+import LobbyPage from './pages/LobbyPage';
 import GamePage from './pages/GamePage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
@@ -17,6 +18,14 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/play/online/:roomId"
+              element={
+                <ProtectedRoute>
+                  <GamePage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/play/:mode"
               element={
@@ -31,14 +40,22 @@ function App() {
                 <Sidebar>
                   <Routes>
                     <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
-                    <Route
-                      path="/home"
-                      element={
-                        <ProtectedRoute>
-                          <HomePage />
-                        </ProtectedRoute>
-                      }
-                    />
+                      <Route
+                        path="/home"
+                        element={
+                          <ProtectedRoute>
+                            <HomePage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/lobby"
+                        element={
+                          <ProtectedRoute>
+                            <LobbyPage />
+                          </ProtectedRoute>
+                        }
+                      />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Sidebar>

@@ -1,15 +1,12 @@
 import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '../../context/AuthContext';
+import LoadingSpinner from '../LoadingSpinner';
 
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuthContext();
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner">Loading...</div>
-      </div>
-    );
+    return <LoadingSpinner text="Authenticating..." />;
   }
 
   if (user) {
