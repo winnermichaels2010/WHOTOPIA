@@ -46,6 +46,17 @@ import {
 } from 'firebase/database';
 import { realtimeDB } from '../index.js';
 
+const DB_TIMEOUT = 15000;
+
+const withTimeout = (promise, ms = DB_TIMEOUT) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Database operation timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+};
+
 // ============ GAME ROOMS ============
 
 const GAME_ROOMS_PATH = 'gameRooms';
@@ -59,13 +70,13 @@ export const createGameRoom = async (roomData) => {
   const newRoomRef = push(ref(realtimeDB, GAME_ROOMS_PATH));
   const roomId = newRoomRef.key;
   
-  await set(newRoomRef, {
+  await withTimeout(set(newRoomRef, {
     ...roomData,
     roomId,
     status: 'waiting',
     currentPlayers: 0,
     createdAt: serverTimestamp()
-  });
+  }));
   
   return roomId;
 };
@@ -77,7 +88,7 @@ export const createGameRoom = async (roomData) => {
  */
 export const getGameRoom = async (roomId) => {
   const roomRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}`);
-  const snapshot = await get(roomRef);
+  const snapshot = await withTimeout(get(roomRef));
   return snapshot;
 };
 
@@ -89,7 +100,7 @@ export const getGameRoom = async (roomId) => {
  */
 export const updateGameRoom = async (roomId, updates) => {
   const roomRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}`);
-  await update(roomRef, updates);
+  await withTimeout(update(roomRef, updates));
 };
 
 /**
@@ -144,16 +155,16 @@ export const onAvailableRoomsChange = (callback) => {
  */
 export const addPlayerToRoom = async (roomId, playerId, playerData) => {
   const playerRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/players/${playerId}`);
-  await set(playerRef, {
+  await withTimeout(set(playerRef, {
     ...playerData,
     joinedAt: serverTimestamp()
-  });
+  }));
   
   // Atomically increment player count (prevents race conditions)
   const countRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/currentPlayers`);
-  await runTransaction(countRef, (currentCount) => {
+  await withTimeout(runTransaction(countRef, (currentCount) => {
     return (currentCount || 0) + 1;
-  });
+  }));
 };
 
 /**
@@ -164,13 +175,13 @@ export const addPlayerToRoom = async (roomId, playerId, playerData) => {
  */
 export const removePlayerFromRoom = async (roomId, playerId) => {
   const playerRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/players/${playerId}`);
-  await remove(playerRef);
+  await withTimeout(remove(playerRef));
   
   // Atomically decrement player count (prevents race conditions)
   const countRef = ref(realtimeDB, `${GAME_ROOMS_PATH}/${roomId}/currentPlayers`);
-  await runTransaction(countRef, (currentCount) => {
+  await withTimeout(runTransaction(countRef, (currentCount) => {
     return Math.max(0, (currentCount || 0) - 1);
-  });
+  }));
 };
 
 /**
@@ -196,10 +207,10 @@ const ACTIVE_GAMES_PATH = 'activeGames';
  */
 export const setGameState = async (roomId, gameState) => {
   const gameRef = ref(realtimeDB, `${ACTIVE_GAMES_PATH}/${roomId}`);
-  await set(gameRef, {
+  await withTimeout(set(gameRef, {
     ...gameState,
     lastUpdated: serverTimestamp()
-  });
+  }));
 };
 
 /**
@@ -221,10 +232,10 @@ export const getGameState = async (roomId) => {
  */
 export const updateGameState = async (roomId, updates) => {
   const gameRef = ref(realtimeDB, `${ACTIVE_GAMES_PATH}/${roomId}`);
-  await update(gameRef, {
+  await withTimeout(update(gameRef, {
     ...updates,
     lastUpdated: serverTimestamp()
-  });
+  }));
 };
 
 /**
