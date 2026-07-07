@@ -207,10 +207,11 @@ const ACTIVE_GAMES_PATH = 'activeGames';
  */
 export const setGameState = async (roomId, gameState) => {
   const gameRef = ref(realtimeDB, `${ACTIVE_GAMES_PATH}/${roomId}`);
-  await withTimeout(set(gameRef, {
+  const safe = JSON.parse(JSON.stringify({
     ...gameState,
-    lastUpdated: serverTimestamp()
+    lastUpdated: Date.now()
   }));
+  await set(gameRef, safe);
 };
 
 /**
@@ -244,9 +245,9 @@ export const updateGameState = async (roomId, updates) => {
  * @param {Function} callback - Callback function with (snapshot)
  * @returns {Function} Unsubscribe function
  */
-export const onGameStateChange = (roomId, callback) => {
+export const onGameStateChange = (roomId, callback, errorCallback) => {
   const gameRef = ref(realtimeDB, `${ACTIVE_GAMES_PATH}/${roomId}`);
-  return onValue(gameRef, callback);
+  return onValue(gameRef, callback, errorCallback);
 };
 
 /**

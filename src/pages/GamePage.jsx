@@ -5,7 +5,7 @@ import AIEngine from '../game/AIEngine';
 import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
-import { onGameStateChange, setGameState } from '../firebase/services/realtimeDBService.js';
+import { onGameStateChange, setGameState, getGameState } from '../firebase/services/realtimeDBService.js';
 import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaTrophy, FaMeh } from 'react-icons/fa';
 import './GamePage.css';
 
@@ -32,6 +32,8 @@ const GamePage = () => {
   const dbUnsubRef = useRef(null);
   const isHost = location.state?.isHost === true;
   const isOnline = !!roomId;
+  const myPlayerIndex = isOnline ? (isHost ? 0 : 1) : 0;
+  const opponentIndex = myPlayerIndex === 0 ? 1 : 0;
 
   const [gameState, setGs] = useState(null);
   const [showSymbolPicker, setShowSymbolPicker] = useState(false);
@@ -48,15 +50,30 @@ const GamePage = () => {
 
   const updateGameState = useCallback(() => {
     if (gameRef.current) {
-      const state = gameRef.current.getGameState(0);
+      const state = gameRef.current.getGameState(myPlayerIndex);
       setGs({ ...state });
     }
-  }, []);
+  }, [myPlayerIndex]);
 
-  const syncStateToDB = useCallback(() => {
+  const syncStateToDB = useCallback(async () => {
     if (!isOnline || !roomId || !gameRef.current) return;
-    const state = gameRef.current.exportState();
-    setGameState(roomId, state);
+    try {
+      const state = gameRef.current.exportState();
+      await setGameState(roomId, state);
+    } catch (err) {
+      console.error('Failed to sync game state:', err);
+      setWrongMoveMessage(`Sync error: ${err.message}`);
+      try {
+        const snapshot = await getGameState(roomId);
+        if (snapshot.exists()) {
+          const cleanState = { ...snapshot.val() };
+          delete cleanState.lastUpdated;
+          gameRef.current.importState(cleanState);
+        }
+      } catch (reloadErr) {
+        console.error('Failed to reload state from Firebase:', reloadErr);
+      }
+    }
   }, [isOnline, roomId]);
 
   const startGame = (diff) => {
@@ -93,12 +110,12 @@ const GamePage = () => {
     }, 2000);
   };
 
-  const handleCardClick = (card) => {
+  const handleCardClick = async (card) => {
     if (!gameRef.current || gameRef.current.gameStatus !== 'playing') return;
-    if (gameRef.current.currentTurn !== 0) return;
+    if (gameRef.current.currentTurn !== myPlayerIndex) return;
     if (gameRef.current.drawPenalty > 0) return;
 
-    const validation = gameRef.current.canPlayCard(card, 0);
+    const validation = gameRef.current.canPlayCard(card, myPlayerIndex);
     if (!validation.valid) {
       if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
       setWrongMoveMessage('Wrong move 😜');
@@ -112,53 +129,50 @@ const GamePage = () => {
       return;
     }
 
-    const result = gameRef.current.playCard(card, 0);
+    const result = gameRef.current.playCard(card, myPlayerIndex);
     if (result.success) {
-      updateGameState();
-      syncStateToDB();
+      await syncStateToDB();
       if (result.gameOver) {
         return;
       }
-      if (isOnline && gameRef.current.currentTurn === 1) {
+      if (isOnline && gameRef.current.currentTurn === opponentIndex) {
         return;
       }
-      if (gameRef.current.currentTurn === 1) {
+      if (gameRef.current.currentTurn === opponentIndex) {
         setTimeout(() => handleAITurn(), 600);
       }
     }
   };
 
-  const handleSymbolSelect = (symbolId) => {
+  const handleSymbolSelect = async (symbolId) => {
     if (!pendingCard) return;
 
-    const result = gameRef.current.playCard(pendingCard, 0, symbolId);
+    const result = gameRef.current.playCard(pendingCard, myPlayerIndex, symbolId);
     setShowSymbolPicker(false);
     setPendingCard(null);
 
     if (result.success) {
-      updateGameState();
-      syncStateToDB();
+      await syncStateToDB();
       if (result.gameOver) {
         return;
       }
-      if (isOnline && gameRef.current.currentTurn === 1) {
+      if (isOnline && gameRef.current.currentTurn === opponentIndex) {
         return;
       }
-      if (gameRef.current.currentTurn === 1) {
+      if (gameRef.current.currentTurn === opponentIndex) {
         setTimeout(() => handleAITurn(), 600);
       }
     }
   };
 
-  const handleDrawCard = () => {
-    if (!gameRef.current || gameRef.current.currentTurn !== 0) return;
+  const handleDrawCard = async () => {
+    if (!gameRef.current || gameRef.current.currentTurn !== myPlayerIndex) return;
 
-    const result = gameRef.current.drawCard(0);
+    const result = gameRef.current.drawCard(myPlayerIndex);
     if (result.success) {
-      updateGameState();
-      syncStateToDB();
+      await syncStateToDB();
       if (isOnline) return;
-      if (!result.isPlayable && gameRef.current.currentTurn === 1) {
+      if (!result.isPlayable && gameRef.current.currentTurn === opponentIndex) {
         setTimeout(() => handleAITurn(), 600);
       }
     }
@@ -260,33 +274,50 @@ const GamePage = () => {
     setWaitingForGame(true);
 
     dbUnsubRef.current = onGameStateChange(roomId, (snapshot) => {
-      if (snapshot.exists()) {
-        const dbState = snapshot.val();
-        const cleanState = { ...dbState };
-        delete cleanState.lastUpdated;
-        if (gameRef.current) {
-          gameRef.current.importState(cleanState);
-          updateGameState();
-        } else {
+      try {
+        if (snapshot.exists()) {
+          const dbState = snapshot.val();
+          const cleanState = { ...dbState };
+          delete cleanState.lastUpdated;
+          setWrongMoveMessage(null);
+          if (gameRef.current) {
+            gameRef.current.importState(cleanState);
+            updateGameState();
+          } else {
+            const engine = new GameEngine();
+            engine.importState(cleanState);
+            gameRef.current = engine;
+            setWaitingForGame(false);
+            setShowStartScreen(false);
+            updateGameState();
+          }
+        } else if (isHost) {
           const engine = new GameEngine();
-          engine.importState(cleanState);
           gameRef.current = engine;
-          setWaitingForGame(false);
-          setShowStartScreen(false);
-          updateGameState();
-        }
-      } else if (isHost) {
-        const engine = new GameEngine();
-        gameRef.current = engine;
-        engine.initGame(['You', 'Opponent'], 5);
-        engine.players[0].name = 'You';
-        engine.players[1].name = 'Opponent';
+          engine.initGame(['You', 'Opponent'], 5);
+          engine.players[0].name = 'You';
+          engine.players[1].name = 'Opponent';
 
-        const state = engine.exportState();
-        setGameState(roomId, state);
-        setWaitingForGame(false);
-        updateGameState();
+          const state = engine.exportState();
+          (async () => {
+            try {
+              await setGameState(roomId, state);
+              setWaitingForGame(false);
+            } catch (err) {
+              console.error('Failed to write initial game state:', err);
+              gameRef.current = null;
+              setWrongMoveMessage(`Failed to initialize game: ${err.message}`);
+            }
+          })();
+        }
+      } catch (err) {
+        console.error('Error processing game state update:', err);
       }
+    }, (error) => {
+      console.error('Game state listener error:', error);
+      if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
+      setWrongMoveMessage('Connection lost — trying to reconnect...');
+      wrongMoveTimeout.current = setTimeout(() => setWrongMoveMessage(null), 5000);
     });
 
     return () => {
@@ -437,7 +468,7 @@ const GamePage = () => {
   }
 
   if (gameState?.gameStatus === 'finished') {
-    const isWinner = gameState.winner === 0;
+    const isWinner = gameState.winner === myPlayerIndex;
     const opponentName = isOnline ? 'Opponent' : 'the computer';
     return (
       <div className="game-page">
@@ -506,9 +537,9 @@ const GamePage = () => {
           </button>
           <div className="game-info-bar">
             <div className="game-status">
-              {gameState?.currentTurn === 0 ? 'Your Turn' : "Opponent's Turn"}
+              {gameState?.currentTurn === myPlayerIndex ? 'Your Turn' : "Opponent's Turn"}
               {isAIThinking && <span className="thinking-dots"> thinking<span>.</span><span>.</span><span>.</span></span>}
-              {gameState?.drawPenalty > 0 && gameState?.currentTurn === 0 && (
+              {gameState?.drawPenalty > 0 && gameState?.currentTurn === myPlayerIndex && (
                 <span className="draw-penalty-warning"> (Draw {gameState.drawPenalty}!)</span>
               )}
             </div>
@@ -528,7 +559,7 @@ const GamePage = () => {
       <div className="game-layout">
         <OpponentArea
           players={gameState?.players || []}
-          currentPlayerId={0}
+          currentPlayerId={myPlayerIndex}
         />
 
         <div className="game-board">
@@ -567,7 +598,7 @@ const GamePage = () => {
           <PlayerHand
             cards={gameState?.myHand || []}
             onCardClick={handleCardClick}
-            disabled={gameState?.currentTurn !== 0 || isAIThinking || gameState?.drawPenalty > 0}
+            disabled={gameState?.currentTurn !== myPlayerIndex || isAIThinking || gameState?.drawPenalty > 0}
           />
         </div>
       </div>

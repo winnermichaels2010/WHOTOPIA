@@ -349,45 +349,52 @@ class GameEngine {
   }
 
   exportState() {
-    return {
+    const stripCard = (c) => {
+      const card = { ...c };
+      if (card.specialType === null) delete card.specialType;
+      return card;
+    };
+    const state = {
       players: this.players.map(p => ({
         ...p,
-        hand: p.hand.map(c => ({ ...c })),
+        hand: p.hand.map(stripCard),
       })),
       currentTurn: this.currentTurn,
-      currentSymbol: this.currentSymbol,
       gameStatus: this.gameStatus,
-      winner: this.winner,
       drawPenalty: this.drawPenalty,
       skipTurn: this.skipTurn,
       repeatTurn: this.repeatTurn,
-      lastAction: this.lastAction,
       direction: this.direction,
       deck: {
-        cards: this.deck.cards.map(c => ({ ...c })),
-        discardPile: this.deck.discardPile.map(c => ({ ...c })),
+        cards: this.deck.cards.map(stripCard),
+        discardPile: this.deck.discardPile.map(stripCard),
       },
       _drawnCardPlayable: !!this._drawnCardPlayable,
-      _lastDrawnCard: this._lastDrawnCard ? { ...this._lastDrawnCard } : null,
     };
+    if (this.currentSymbol !== null) state.currentSymbol = this.currentSymbol;
+    if (this.winner !== null) state.winner = this.winner;
+    if (this.lastAction !== null) state.lastAction = this.lastAction;
+    if (this._lastDrawnCard !== null) state._lastDrawnCard = { ...this._lastDrawnCard };
+    return state;
   }
 
   importState(state) {
+    const restoreCard = (c) => ({ ...c, specialType: c.specialType ?? null });
     this.players = state.players.map(p => ({
       ...p,
-      hand: p.hand.map(c => ({ ...c })),
+      hand: p.hand.map(restoreCard),
     }));
     this.currentTurn = state.currentTurn;
-    this.currentSymbol = state.currentSymbol;
+    this.currentSymbol = state.currentSymbol ?? null;
     this.gameStatus = state.gameStatus;
-    this.winner = state.winner;
+    this.winner = state.winner ?? null;
     this.drawPenalty = state.drawPenalty;
     this.skipTurn = state.skipTurn;
     this.repeatTurn = state.repeatTurn;
-    this.lastAction = state.lastAction;
+    this.lastAction = state.lastAction ?? null;
     this.direction = state.direction;
-    this.deck.cards = state.deck.cards.map(c => ({ ...c }));
-    this.deck.discardPile = state.deck.discardPile.map(c => ({ ...c }));
+    this.deck.cards = state.deck.cards.map(restoreCard);
+    this.deck.discardPile = state.deck.discardPile.map(restoreCard);
     this._drawnCardPlayable = !!state._drawnCardPlayable;
     this._lastDrawnCard = state._lastDrawnCard ? { ...state._lastDrawnCard } : null;
   }
