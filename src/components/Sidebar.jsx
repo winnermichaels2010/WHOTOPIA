@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuthContext } from '../context/AuthContext';
-import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe, FaBook, FaFileContract, FaCog } from 'react-icons/fa';
+import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe, FaBook, FaFileContract, FaCog, FaEnvelope } from 'react-icons/fa';
 import './Sidebar.css';
 
 const allNavItems = [
   { path: '/', icon: <FaHome />, label: 'Home' },
   { path: '/dashboard', icon: <FaDice />, label: 'Dashboard' },
+  { path: '/dialogs', icon: <FaEnvelope />, label: 'Messages' },
   { path: '/play', icon: <FaGamepad />, label: 'Play', children: [
     { path: '/play/ai', icon: <FaRobot />, label: 'vs Computer' },
     { path: '/lobby', icon: <FaGlobe />, label: 'vs Players' },

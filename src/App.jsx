@@ -10,6 +10,7 @@ import GamePage from './pages/GamePage';
 import HowToPlayPage from './pages/HowToPlayPage';
 import TermsPage from './pages/TermsPage';
 import SettingsPage from './pages/SettingsPage';
+import DialogsPage from './pages/DialogsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
 import './App.css';
@@ -42,7 +43,7 @@ function App() {
               element={
                 <Sidebar>
                   <Routes>
-                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
                       <Route
                         path="/dashboard"
                         element={
@@ -72,6 +73,22 @@ function App() {
                         element={
                           <ProtectedRoute>
                             <SettingsPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/dialogs"
+                        element={
+                          <ProtectedRoute>
+                            <DialogsPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/dialogs/:dialogId"
+                        element={
+                          <ProtectedRoute>
+                            <DialogsPage />
                           </ProtectedRoute>
                         }
                       />

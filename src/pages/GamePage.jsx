@@ -397,7 +397,7 @@ const GamePage = () => {
     return (
       <div className="game-page">
         <div className="game-start-screen">
-          <button className="game-back-btn" onClick={() => navigate('/')}>
+          <button className="game-back-btn" onClick={() => navigate('/dashboard')}>
             <FaArrowLeft /> Back
           </button>
 
@@ -513,8 +513,8 @@ const GamePage = () => {
                   <FaRedo /> Play Again
                 </button>
               )}
-              <button className="game-over-btn secondary" onClick={() => navigate('/')}>
-                <FaArrowLeft /> Back to Home
+              <button className="game-over-btn secondary" onClick={() => navigate('/dashboard')}>
+                <FaArrowLeft /> Back to Dashboard
               </button>
             </div>
           </div>
@@ -558,7 +558,7 @@ const GamePage = () => {
   return (
     <div className="game-page">
       <div className="game-header">
-          <button className="game-back-btn" onClick={() => navigate(isOnline ? '/lobby' : '/')}>
+          <button className="game-back-btn" onClick={() => navigate(isOnline ? '/lobby' : '/dashboard')}>
             <FaArrowLeft />
           </button>
           <div className="game-info-bar">
