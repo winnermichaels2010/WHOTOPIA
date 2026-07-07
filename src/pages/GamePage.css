@@ -502,6 +502,23 @@
   border-color: var(--accent-red);
 }
 
+/* --- One Card Warning --- */
+.one-card-warning {
+  background: #ff9800;
+  color: #000;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  animation: fadeInDown 0.3s ease;
+  z-index: 10;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* --- Game Layout --- */
 .game-layout {
   flex: 1;

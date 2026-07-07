@@ -371,10 +371,10 @@ class GameEngine {
       },
       _drawnCardPlayable: !!this._drawnCardPlayable,
     };
-    if (this.currentSymbol !== null) state.currentSymbol = this.currentSymbol;
-    if (this.winner !== null) state.winner = this.winner;
-    if (this.lastAction !== null) state.lastAction = this.lastAction;
-    if (this._lastDrawnCard !== null) state._lastDrawnCard = stripCard(this._lastDrawnCard);
+    if (this.currentSymbol != null) state.currentSymbol = this.currentSymbol;
+    if (this.winner != null) state.winner = this.winner;
+    if (this.lastAction != null) state.lastAction = this.lastAction;
+    if (this._lastDrawnCard != null) state._lastDrawnCard = stripCard(this._lastDrawnCard);
     return state;
   }
 

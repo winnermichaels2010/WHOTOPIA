@@ -205,12 +205,22 @@ const ACTIVE_GAMES_PATH = 'activeGames';
  * @param {Object} gameState - Game state data
  * @returns {Promise<void>}
  */
+const stripUndefined = (obj) => {
+  if (obj === null || obj === undefined || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(stripUndefined);
+  const cleaned = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) cleaned[k] = stripUndefined(v);
+  }
+  return cleaned;
+};
+
 export const setGameState = async (roomId, gameState) => {
   const gameRef = ref(realtimeDB, `${ACTIVE_GAMES_PATH}/${roomId}`);
-  const safe = JSON.parse(JSON.stringify({
+  const safe = stripUndefined({
     ...gameState,
     lastUpdated: Date.now()
-  }));
+  });
   await set(gameRef, safe);
 };
 

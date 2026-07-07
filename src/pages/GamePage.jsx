@@ -46,7 +46,9 @@ const GamePage = () => {
   const [revealed, setRevealed] = useState(false);
   const [wrongMoveMessage, setWrongMoveMessage] = useState(null);
   const [waitingForGame, setWaitingForGame] = useState(false);
+  const [oneCardWarning, setOneCardWarning] = useState(null);
   const wrongMoveTimeout = useRef(null);
+  const prevCardCountsRef = useRef({});
 
   const updateGameState = useCallback(() => {
     if (gameRef.current) {
@@ -266,6 +268,25 @@ const GamePage = () => {
   };
 
   useEffect(() => {
+    if (!gameState?.players) return;
+    const current = {};
+    for (const p of gameState.players) {
+      current[p.id] = p.cardCount;
+      if (p.id !== myPlayerIndex && p.cardCount === 1 && prevCardCountsRef.current[p.id] !== 1) {
+        setOneCardWarning(`${p.name} has one card remaining!`);
+      }
+    }
+    prevCardCountsRef.current = current;
+  }, [gameState, myPlayerIndex]);
+
+  useEffect(() => {
+    if (oneCardWarning) {
+      const t = setTimeout(() => setOneCardWarning(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [oneCardWarning]);
+
+  useEffect(() => {
     return () => {
       if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
     };
@@ -473,17 +494,17 @@ const GamePage = () => {
 
   if (gameState?.gameStatus === 'finished') {
     const isWinner = gameState.winner === myPlayerIndex;
-    const opponentName = isOnline ? 'Opponent' : 'the computer';
+    const winnerName = gameState.players?.[gameState.winner]?.name || (isOnline ? 'Opponent' : 'Computer');
     return (
       <div className="game-page">
         <div className="game-over-screen">
           <div className="game-over-content">
             <div className="game-over-icon">{isWinner ? <FaTrophy /> : <FaMeh />}</div>
-            <h1 className="game-over-title">{isWinner ? 'You Win!' : 'You Lose!'}</h1>
+            <h1 className="game-over-title">{isWinner ? 'You Win!' : 'You Lost!'}</h1>
             <p className="game-over-subtitle">
               {isWinner
-                ? `Congratulations! You defeated ${opponentName}!`
-                : `Better luck next time! ${opponentName.charAt(0).toUpperCase() + opponentName.slice(1)} got you.`}
+                ? `Congratulations! You defeated ${winnerName}!`
+                : `${winnerName} won. Try again next time.`}
             </p>
             <div className="game-over-actions">
               {!isOnline && (
@@ -559,6 +580,10 @@ const GamePage = () => {
             </div>
           </div>
       </div>
+
+      {oneCardWarning && (
+        <div className="one-card-warning">{oneCardWarning}</div>
+      )}
 
       <div className="game-layout">
         <OpponentArea
