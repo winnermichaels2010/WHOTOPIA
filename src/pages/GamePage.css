@@ -728,8 +728,6 @@
 }
 
 .player-hand {
-  display: flex;
-  justify-content: center;
   max-width: 100%;
   overflow-x: auto;
   padding-bottom: 0.2rem;
@@ -740,6 +738,8 @@
   gap: 0.35rem;
   flex-wrap: nowrap;
   padding: 0.2rem;
+  width: fit-content;
+  margin: 0 auto;
 }
 
 .hand-empty-text {

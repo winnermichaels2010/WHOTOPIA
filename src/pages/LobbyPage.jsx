@@ -104,7 +104,6 @@ const LobbyPage = () => {
         name: `${user?.displayName || 'Player'}'s Game`,
         hostId: user?.uid || 'guest',
         maxPlayers: 2,
-        currentPlayers: 0,
         gameMode: 'online',
         status: 'waiting',
         createdAt: Date.now(),

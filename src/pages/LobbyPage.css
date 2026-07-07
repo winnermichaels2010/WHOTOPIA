@@ -404,3 +404,22 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Small screens */
+@media (max-width: 480px) {
+  .lobby-page {
+    padding: 1rem;
+  }
+
+  .lobby-container {
+    padding: 1.25rem;
+  }
+
+  .join-input-group {
+    max-width: 100%;
+  }
+
+  .room-code {
+    font-size: 1.5rem;
+  }
+}
