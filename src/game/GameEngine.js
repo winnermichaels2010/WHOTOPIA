@@ -374,7 +374,7 @@ class GameEngine {
     if (this.currentSymbol !== null) state.currentSymbol = this.currentSymbol;
     if (this.winner !== null) state.winner = this.winner;
     if (this.lastAction !== null) state.lastAction = this.lastAction;
-    if (this._lastDrawnCard !== null) state._lastDrawnCard = { ...this._lastDrawnCard };
+    if (this._lastDrawnCard !== null) state._lastDrawnCard = stripCard(this._lastDrawnCard);
     return state;
   }
 
@@ -396,7 +396,7 @@ class GameEngine {
     this.deck.cards = state.deck.cards.map(restoreCard);
     this.deck.discardPile = state.deck.discardPile.map(restoreCard);
     this._drawnCardPlayable = !!state._drawnCardPlayable;
-    this._lastDrawnCard = state._lastDrawnCard ? { ...state._lastDrawnCard } : null;
+    this._lastDrawnCard = state._lastDrawnCard ? restoreCard(state._lastDrawnCard) : null;
   }
 }
 

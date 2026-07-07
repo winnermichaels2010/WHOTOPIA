@@ -73,6 +73,7 @@ const GamePage = () => {
       } catch (reloadErr) {
         console.error('Failed to reload state from Firebase:', reloadErr);
       }
+      updateGameState();
     }
   }, [isOnline, roomId]);
 
@@ -132,6 +133,7 @@ const GamePage = () => {
     const result = gameRef.current.playCard(card, myPlayerIndex);
     if (result.success) {
       await syncStateToDB();
+      updateGameState();
       if (result.gameOver) {
         return;
       }
@@ -153,6 +155,7 @@ const GamePage = () => {
 
     if (result.success) {
       await syncStateToDB();
+      updateGameState();
       if (result.gameOver) {
         return;
       }
@@ -171,6 +174,7 @@ const GamePage = () => {
     const result = gameRef.current.drawCard(myPlayerIndex);
     if (result.success) {
       await syncStateToDB();
+      updateGameState();
       if (isOnline) return;
       if (!result.isPlayable && gameRef.current.currentTurn === opponentIndex) {
         setTimeout(() => handleAITurn(), 600);
