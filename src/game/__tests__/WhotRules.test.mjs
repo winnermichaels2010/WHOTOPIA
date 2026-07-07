@@ -178,13 +178,19 @@ describe('Whot Game Rules', () => {
       expect(engine.currentTurn).toBe(1);
     });
 
-    it('prevents play for penalized player', () => {
+    it('prevents play for penalized player (only matching-value defense)', () => {
       const engine = makeGame(['Alice', 'Bob'], 2);
       const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
       engine.playCard(p2, 0);
-      const card = engine.players[1].hand[0];
-      const result = engine.canPlayCard(card, 1);
-      expect(result.valid).toBe(false);
+      const hand = engine.players[1].hand;
+      const nonMatching = hand.find(c => c.value !== 2);
+      if (nonMatching) {
+        expect(engine.canPlayCard(nonMatching, 1).valid).toBe(false);
+      }
+      const defense = hand.find(c => c.value === 2);
+      if (defense) {
+        expect(engine.canPlayCard(defense, 1).valid).toBe(true);
+      }
     });
 
     it('penalized player draws one card per click', () => {
@@ -201,6 +207,41 @@ describe('Whot Game Rules', () => {
       expect(engine.players[1].cardCount).toBe(bobCount + 2);
       expect(engine.drawPenalty).toBe(0);
       expect(engine.currentTurn).toBe(0);
+    });
+
+    it('allows penalized player to defend with card 2', () => {
+      const engine = makeGame(['Alice', 'Bob'], 2);
+      const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
+      engine.playCard(p2, 0);
+      const defenseCard = addCardToHand(engine, 1, 2, 'star');
+      const beforeCount = engine.players[1].cardCount;
+      const penaltyBefore = engine.drawPenalty;
+      expect(penaltyBefore).toBeGreaterThan(0);
+      const result = engine.playCard(defenseCard, 1);
+      expect(result.success).toBe(true);
+      expect(engine.drawPenalty).toBe(0);
+      expect(engine.players[1].cardCount).toBe(beforeCount - 1);
+    });
+
+    it('rejects card 5 as defense against card 2 penalty', () => {
+      const engine = makeGame(['Alice', 'Bob'], 5);
+      const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
+      engine.playCard(p2, 0);
+      const fiveCard = addCardToHand(engine, 1, 5, 'circle');
+      expect(engine.canPlayCard(fiveCard, 1).valid).toBe(false);
+    });
+
+    it('allows penalized player to defend with card 5', () => {
+      const engine = makeGame(['Alice', 'Bob'], 2);
+      const p5 = addCardToHand(engine, 0, 5, engine.currentSymbol);
+      engine.playCard(p5, 0);
+      const defenseCard = addCardToHand(engine, 1, 5, 'circle');
+      const beforeCount = engine.players[1].cardCount;
+      expect(engine.drawPenalty).toBeGreaterThan(0);
+      const result = engine.playCard(defenseCard, 1);
+      expect(result.success).toBe(true);
+      expect(engine.drawPenalty).toBe(0);
+      expect(engine.players[1].cardCount).toBe(beforeCount - 1);
     });
   });
 

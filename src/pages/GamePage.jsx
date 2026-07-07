@@ -117,7 +117,6 @@ const GamePage = () => {
   const handleCardClick = async (card) => {
     if (!gameRef.current || gameRef.current.gameStatus !== 'playing') return;
     if (gameRef.current.currentTurn !== myPlayerIndex) return;
-    if (gameRef.current.drawPenalty > 0) return;
 
     const validation = gameRef.current.canPlayCard(card, myPlayerIndex);
     if (!validation.valid) {
@@ -179,7 +178,7 @@ const GamePage = () => {
       await syncStateToDB();
       updateGameState();
       if (isOnline) return;
-      if (!result.isPlayable && gameRef.current.currentTurn === opponentIndex) {
+      if (gameRef.current.currentTurn === opponentIndex) {
         setTimeout(() => handleAITurn(), 600);
       }
     }
@@ -197,6 +196,19 @@ const GamePage = () => {
       const ai = aiRef.current;
 
       if (engine.drawPenalty > 0) {
+        const validCards = engine.getValidCards(1);
+        if (validCards.length > 0) {
+          const chosenCard = validCards[0];
+          const result = engine.playCard(chosenCard, 1);
+          if (result.success) {
+            updateGameState();
+            setIsAIThinking(false);
+            if (engine.gameStatus === 'playing' && engine.currentTurn === 1) {
+              setTimeout(() => handleAITurn(), 500);
+            }
+            return;
+          }
+        }
         const result = engine.drawCard(1);
         if (result.success) {
           updateGameState();
@@ -216,17 +228,6 @@ const GamePage = () => {
         const result = engine.drawCard(1);
         if (result.success) {
           updateGameState();
-          if (result.isPlayable && ai.shouldPlayDrawnCard(result.card, state)) {
-            const symbol = result.card.value === 20 ? ai.chooseSymbol(engine.getGameState(1)) : null;
-            const playResult = engine.playCard(result.card, 1, symbol);
-            if (playResult.success) {
-              updateGameState();
-              if (playResult.gameOver) {
-                setIsAIThinking(false);
-                return;
-              }
-            }
-          }
         } else {
           updateGameState();
         }
@@ -630,7 +631,7 @@ const GamePage = () => {
           <PlayerHand
             cards={gameState?.myHand || []}
             onCardClick={handleCardClick}
-            disabled={gameState?.currentTurn !== myPlayerIndex || isAIThinking || gameState?.drawPenalty > 0}
+            disabled={gameState?.currentTurn !== myPlayerIndex || isAIThinking}
           />
         </div>
       </div>

@@ -13,6 +13,7 @@ class GameEngine {
     this.repeatTurn = false;
     this.lastAction = null;
     this.direction = 1;
+    this._pendingPenaltyValue = 0;
   }
 
   initGame(playerNames, cardsPerPlayer = 5) {
@@ -58,6 +59,7 @@ class GameEngine {
     this.skipTurn = false;
     this.repeatTurn = false;
     this.direction = 1;
+    this._pendingPenaltyValue = 0;
     this.lastAction = 'Game started';
   }
 
@@ -69,7 +71,10 @@ class GameEngine {
       return { valid: false, reason: 'Not your turn' };
     }
     if (this.drawPenalty > 0) {
-      return { valid: false, reason: 'You must draw penalty cards first' };
+      if (this._pendingPenaltyValue > 0 && card.value === this._pendingPenaltyValue) {
+        return { valid: true, reason: '' };
+      }
+      return { valid: false, reason: `You must draw ${this.drawPenalty} penalty card(s)` };
     }
 
     const topCard = this.deck.getTopCard();
@@ -119,7 +124,17 @@ class GameEngine {
       this.currentSymbol = card.symbol;
     }
 
-    const effects = this.applySpecialEffects(card, playerId);
+    const isDefense = this.drawPenalty > 0 && this._pendingPenaltyValue > 0 && card.value === this._pendingPenaltyValue;
+
+    let effects;
+    if (isDefense) {
+      this.drawPenalty = 0;
+      this._pendingPenaltyValue = 0;
+      effects = { holdOn: false, drawPenaltyAdded: 0, suspension: false, generalMarket: false };
+      this.lastAction = `${player.name} defended with ${card.name}!`;
+    } else {
+      effects = this.applySpecialEffects(card, playerId);
+    }
 
     if (player.hand.length === 0) {
       this.gameStatus = 'finished';
@@ -140,7 +155,9 @@ class GameEngine {
       this.advanceTurn();
     }
 
-    this.lastAction = this._formatLastAction(player.name, card, chosenSymbol);
+    if (!isDefense) {
+      this.lastAction = this._formatLastAction(player.name, card, chosenSymbol);
+    }
 
     return {
       success: true,
@@ -166,12 +183,14 @@ class GameEngine {
 
       case 'pick2':
         this.drawPenalty += 2;
+        this._pendingPenaltyValue = 2;
         effects.drawPenaltyAdded = 2;
         this.lastAction = 'Pick Two! Next player draws 2 and loses turn.';
         break;
 
       case 'pick3':
         this.drawPenalty += 3;
+        this._pendingPenaltyValue = 5;
         effects.drawPenaltyAdded = 3;
         this.lastAction = 'Pick Three! Next player draws 3 and loses turn.';
         break;
@@ -245,6 +264,7 @@ class GameEngine {
       this.drawPenalty--;
 
       if (this.drawPenalty === 0) {
+        this._pendingPenaltyValue = 0;
         this.lastAction = `${this.players[playerId].name} drew all penalty cards and loses turn.`;
         this.advanceTurn();
       } else {
@@ -262,39 +282,10 @@ class GameEngine {
     this.players[playerId].hand.push(card);
     this.players[playerId].cardCount = this.players[playerId].hand.length;
 
-    const isPlayable = this.canPlayCard(card, playerId).valid;
-
-    if (!isPlayable) {
-      this.lastAction = `${this.players[playerId].name} drew a card and cannot play it.`;
-      this.advanceTurn();
-    } else {
-      this.lastAction = `${this.players[playerId].name} drew a card. It may be played.`;
-      this._drawnCardPlayable = true;
-      this._lastDrawnCard = card;
-    }
-
-    return { success: true, card, isPlayable, cards: [card] };
-  }
-
-  passAfterDraw(playerId) {
-    if (playerId !== this.currentTurn) {
-      return { success: false, error: 'Not your turn' };
-    }
-    this._drawnCardPlayable = false;
-    this._lastDrawnCard = null;
-    this.lastAction = `${this.players[playerId].name} passed after drawing.`;
+    this.lastAction = `${this.players[playerId].name} went to market and drew a card.`;
     this.advanceTurn();
-    return { success: true };
-  }
 
-  canDrawBePlayed(playerId) {
-    if (playerId !== this.currentTurn) return false;
-    return this._drawnCardPlayable && this._lastDrawnCard != null;
-  }
-
-  getLastDrawnCard(playerId) {
-    if (playerId !== this.currentTurn) return null;
-    return this._lastDrawnCard;
+    return { success: true, card, isPlayable: false, cards: [card] };
   }
 
   getGameState(playerId) {
@@ -317,8 +308,6 @@ class GameEngine {
       lastAction: this.lastAction,
       winner: this.winner,
       direction: this.direction,
-      canPlayDrawnCard: this.canDrawBePlayed(playerId),
-      lastDrawnCard: this.getLastDrawnCard(playerId),
     };
 
     if (this.gameStatus === 'playing') {
@@ -333,7 +322,15 @@ class GameEngine {
   getValidCards(playerId) {
     if (this.gameStatus !== 'playing') return [];
     if (playerId !== this.currentTurn) return [];
-    if (this.drawPenalty > 0) return [];
+
+    if (this.drawPenalty > 0) {
+      if (this._pendingPenaltyValue > 0) {
+        return this.players[playerId].hand.filter(card => {
+          return card.value === this._pendingPenaltyValue;
+        });
+      }
+      return [];
+    }
 
     return this.players[playerId].hand.filter(card => {
       return this.canPlayCard(card, playerId).valid;
@@ -365,16 +362,15 @@ class GameEngine {
       skipTurn: this.skipTurn,
       repeatTurn: this.repeatTurn,
       direction: this.direction,
+      _pendingPenaltyValue: this._pendingPenaltyValue,
       deck: {
         cards: this.deck.cards.map(stripCard),
         discardPile: this.deck.discardPile.map(stripCard),
       },
-      _drawnCardPlayable: !!this._drawnCardPlayable,
     };
     if (this.currentSymbol != null) state.currentSymbol = this.currentSymbol;
     if (this.winner != null) state.winner = this.winner;
     if (this.lastAction != null) state.lastAction = this.lastAction;
-    if (this._lastDrawnCard != null) state._lastDrawnCard = stripCard(this._lastDrawnCard);
     return state;
   }
 
@@ -393,10 +389,9 @@ class GameEngine {
     this.repeatTurn = state.repeatTurn;
     this.lastAction = state.lastAction ?? null;
     this.direction = state.direction;
+    this._pendingPenaltyValue = state._pendingPenaltyValue ?? 0;
     this.deck.cards = state.deck.cards.map(restoreCard);
     this.deck.discardPile = state.deck.discardPile.map(restoreCard);
-    this._drawnCardPlayable = !!state._drawnCardPlayable;
-    this._lastDrawnCard = state._lastDrawnCard ? restoreCard(state._lastDrawnCard) : null;
   }
 }
 

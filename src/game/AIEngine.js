@@ -42,14 +42,6 @@ class AIEngine {
     return !validCards || validCards.length === 0;
   }
 
-  shouldPlayDrawnCard(card, gameState) {
-    if (!card) return false;
-    const validCards = gameState.validMoves || [];
-    if (!validCards.some(c => c.id === card.id)) return false;
-    if (this.difficulty === 'easy') return Math.random() > 0.5;
-    return true;
-  }
-
   _easyChoice(validCards) {
     return validCards[0];
   }
