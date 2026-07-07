@@ -2,15 +2,19 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuthContext } from '../context/AuthContext';
-import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe } from 'react-icons/fa';
+import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe, FaBook, FaFileContract, FaCog } from 'react-icons/fa';
 import './Sidebar.css';
 
-const navItems = [
-  { path: '/home', icon: <FaHome />, label: 'Home' },
+const allNavItems = [
+  { path: '/', icon: <FaHome />, label: 'Home' },
+  { path: '/dashboard', icon: <FaDice />, label: 'Dashboard' },
   { path: '/play', icon: <FaGamepad />, label: 'Play', children: [
     { path: '/play/ai', icon: <FaRobot />, label: 'vs Computer' },
     { path: '/lobby', icon: <FaGlobe />, label: 'vs Players' },
   ]},
+  { path: '/how-to-play', icon: <FaBook />, label: 'How to Play' },
+  { path: '/settings', icon: <FaCog />, label: 'Settings' },
+  { path: '/terms', icon: <FaFileContract />, label: 'Terms & Conditions' },
 ];
 
 const Sidebar = ({ children }) => {
@@ -21,6 +25,12 @@ const Sidebar = ({ children }) => {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const { user, logout } = useAuthContext();
+
+  const navItems = allNavItems.filter(item => {
+    if (item.path === '/' && user) return false;
+    if (!user && ['/dashboard', '/settings', '/play'].includes(item.path)) return false;
+    return true;
+  });
 
   const handleNav = (path) => {
     navigate(path);

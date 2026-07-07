@@ -6,6 +6,7 @@ import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
 import { onGameStateChange, setGameState, getGameState } from '../firebase/services/realtimeDBService.js';
+import ChatAside from '../components/ChatAside';
 import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaTrophy, FaMeh } from 'react-icons/fa';
 import './GamePage.css';
 
@@ -580,6 +581,8 @@ const GamePage = () => {
             </div>
           </div>
       </div>
+
+      {isOnline && <ChatAside roomId={roomId} />}
 
       {oneCardWarning && (
         <div className="one-card-warning">{oneCardWarning}</div>

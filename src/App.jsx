@@ -7,6 +7,9 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import LobbyPage from './pages/LobbyPage';
 import GamePage from './pages/GamePage';
+import HowToPlayPage from './pages/HowToPlayPage';
+import TermsPage from './pages/TermsPage';
+import SettingsPage from './pages/SettingsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
 import './App.css';
@@ -39,9 +42,9 @@ function App() {
               element={
                 <Sidebar>
                   <Routes>
-                    <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+                    <Route path="/" element={<LandingPage />} />
                       <Route
-                        path="/home"
+                        path="/dashboard"
                         element={
                           <ProtectedRoute>
                             <HomePage />
@@ -49,10 +52,26 @@ function App() {
                         }
                       />
                       <Route
+                        path="/how-to-play"
+                        element={<HowToPlayPage />}
+                      />
+                      <Route
+                        path="/terms"
+                        element={<TermsPage />}
+                      />
+                      <Route
                         path="/lobby"
                         element={
                           <ProtectedRoute>
                             <LobbyPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/settings"
+                        element={
+                          <ProtectedRoute>
+                            <SettingsPage />
                           </ProtectedRoute>
                         }
                       />

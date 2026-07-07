@@ -171,8 +171,16 @@
   color: var(--accent-red);
 }
 
+.logout-btn {
+  color: var(--accent-red) !important;
+}
+
+.logout-btn .nav-icon {
+  color: var(--accent-red) !important;
+}
+
 .logout-btn:hover {
-  color: var(--accent-red);
+  background: rgba(230, 57, 70, 0.12) !important;
 }
 
 /* Main Content */

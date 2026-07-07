@@ -33,7 +33,7 @@ const LoginForm = ({ onSwitchToRegister, onSwitchToForgotPassword }) => {
     const result = await signIn(email, password);
     
     if (result.success) {
-      navigate('/home');
+      navigate('/dashboard');
     } else {
       setError(result.error);
       setIsSubmitting(false);
@@ -47,7 +47,7 @@ const LoginForm = ({ onSwitchToRegister, onSwitchToForgotPassword }) => {
     const result = await googleSignIn();
     
     if (result.success) {
-      navigate('/home');
+      navigate('/dashboard');
     } else {
       setError(result.error);
       setIsSubmitting(false);

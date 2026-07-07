@@ -16,6 +16,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -27,6 +28,21 @@ const RegisterForm = ({ onSwitchToLogin }) => {
 
     if (!displayName || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    if (displayName.includes(' ')) {
+      setError('Nick name must not contain spaces');
+      return;
+    }
+
+    if (displayName.length > 10) {
+      setError('Nick name must not exceed 10 characters');
+      return;
+    }
+
+    if (!agreeTerms) {
+      setError('You must agree to the Terms & Conditions');
       return;
     }
 
@@ -45,7 +61,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
     const result = await signUp(email, password, displayName);
     
     if (result.success) {
-      navigate('/home');
+      navigate('/dashboard');
     } else {
       setError(result.error);
       setIsSubmitting(false);
@@ -53,13 +69,17 @@ const RegisterForm = ({ onSwitchToLogin }) => {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!agreeTerms) {
+      setError('You must agree to the Terms & Conditions');
+      return;
+    }
     setError('');
     setIsSubmitting(true);
 
     const result = await googleSignIn();
     
     if (result.success) {
-      navigate('/home');
+      navigate('/dashboard');
     } else {
       setError(result.error);
       setIsSubmitting(false);
@@ -81,13 +101,13 @@ const RegisterForm = ({ onSwitchToLogin }) => {
 
       <form onSubmit={handleSubmit} className="auth-form-content">
         <div className="form-group">
-          <label htmlFor="displayName">Display Name</label>
+          <label htmlFor="displayName">Nick Name</label>
           <input
             type="text"
             id="displayName"
             value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
+            onChange={(e) => setDisplayName(e.target.value.replace(/\s/g, '').slice(0, 10))}
+            placeholder="Nick name"
             required
             disabled={isSubmitting}
           />
@@ -132,6 +152,28 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           />
         </div>
 
+        <div className="form-group checkbox-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={agreeTerms}
+              onChange={(e) => setAgreeTerms(e.target.checked)}
+              disabled={isSubmitting}
+            />
+            <span className="checkbox-custom"></span>
+            <span>
+              I agree to the{' '}
+              <button
+                type="button"
+                className="text-button"
+                onClick={(e) => { e.preventDefault(); navigate('/terms'); }}
+              >
+                Terms & Conditions
+              </button>
+            </span>
+          </label>
+        </div>
+
         <button
           type="submit"
           className="auth-button primary"
@@ -148,7 +190,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           type="button"
           className="auth-button google"
           onClick={handleGoogleSignIn}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !agreeTerms}
         >
           <FcGoogle className="google-icon" />
           <span>Sign up with Google</span>

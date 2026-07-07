@@ -1,0 +1,174 @@
+.how-to-play-page {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.htp-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.htp-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.htp-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.htp-section {
+  margin-bottom: 2.5rem;
+}
+
+.htp-section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.htp-section p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.htp-symbols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.htp-symbol {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.htp-rules-list,
+.htp-tips-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.htp-rules-list li,
+.htp-tips-list li {
+  padding: 0.85rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.htp-rules-list li::before {
+  content: '•';
+  color: var(--accent-red);
+  font-weight: bold;
+  margin-right: 0.6rem;
+}
+
+.htp-tips-list li strong {
+  color: var(--text-primary);
+}
+
+.htp-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.htp-card-rule {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.85rem;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.htp-card-rule:hover {
+  border-color: var(--accent-red);
+  transform: translateY(-2px);
+}
+
+.htp-card-rule-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: white;
+  margin-bottom: 0.75rem;
+}
+
+.htp-card-rule-icon.hold-on,
+.htp-card-rule-icon.whot {
+  background: linear-gradient(135deg, #e63946, #f72585);
+}
+
+.htp-card-rule-icon.pick-two {
+  background: linear-gradient(135deg, #FF9800, #ff5722);
+}
+
+.htp-card-rule-icon.pick-three {
+  background: linear-gradient(135deg, #f44336, #b71c1c);
+}
+
+.htp-card-rule-icon.suspension {
+  background: linear-gradient(135deg, #2196F3, #1565C0);
+}
+
+.htp-card-rule-icon.general-market {
+  background: linear-gradient(135deg, #4CAF50, #2E7D32);
+}
+
+.htp-card-rule h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.htp-card-rule p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .how-to-play-page {
+    padding: 1rem;
+  }
+
+  .htp-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .htp-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

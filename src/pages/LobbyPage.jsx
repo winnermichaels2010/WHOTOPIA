@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, set } from 'firebase/database';
 import { useAuthContext } from '../context/AuthContext';
-import { FaArrowLeft, FaGamepad, FaCopy, FaCheck, FaSpinner, FaUsers, FaUser, FaPlay } from 'react-icons/fa';
+import { FaArrowLeft, FaGamepad, FaCopy, FaCheck, FaSpinner, FaUsers, FaUser, FaPlay, FaCog, FaChevronDown } from 'react-icons/fa';
 import {
   getGameRoom,
   updateGameRoom,
@@ -37,6 +37,12 @@ const LobbyPage = () => {
   const [players, setPlayers] = useState({});
   const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [gameRules, setGameRules] = useState({
+    startingCards: 5,
+    stackingPenalties: true,
+    allowMultiPlay: false,
+  });
   const roomListenerRef = useRef(null);
   const playersListenerRef = useRef(null);
 
@@ -174,8 +180,8 @@ const LobbyPage = () => {
     if (!currentRoom) return;
     setStarting(true);
     try {
-      await updateGameRoom(currentRoom.id, { status: 'playing' });
-      navigate(`/play/online/${currentRoom.id}`, { state: { isHost: true } });
+      await updateGameRoom(currentRoom.id, { status: 'playing', rules: gameRules });
+      navigate(`/play/online/${currentRoom.id}`, { state: { isHost: true, rules: gameRules } });
     } catch (err) {
       console.error('Failed to start game:', err);
     }
@@ -267,6 +273,57 @@ const LobbyPage = () => {
               </div>
             </div>
 
+            {isHost && (
+              <div className="room-rules-section">
+                <button
+                  className="room-rules-toggle"
+                  onClick={() => setShowRules(!showRules)}
+                >
+                  <FaCog />
+                  <span>Game Rules {showRules ? '(optional)' : ''}</span>
+                  <FaChevronDown className={`rules-arrow ${showRules ? 'expanded' : ''}`} />
+                </button>
+
+                {showRules && (
+                  <div className="room-rules-content">
+                    <div className="rule-item">
+                      <label>Starting Cards</label>
+                      <select
+                        value={gameRules.startingCards}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, startingCards: Number(e.target.value) }))}
+                      >
+                        <option value={3}>3 cards</option>
+                        <option value={5}>5 cards</option>
+                        <option value={7}>7 cards</option>
+                      </select>
+                    </div>
+                    <div className="rule-item">
+                      <label>Stack Penalties</label>
+                      <label className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={gameRules.stackingPenalties}
+                          onChange={(e) => setGameRules(prev => ({ ...prev, stackingPenalties: e.target.checked }))}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+                    <div className="rule-item">
+                      <label>Allow Multi-Play</label>
+                      <label className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={gameRules.allowMultiPlay}
+                          onChange={(e) => setGameRules(prev => ({ ...prev, allowMultiPlay: e.target.checked }))}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {isHost && playerList.length >= 2 && (
               <button
                 className="start-game-btn"
@@ -289,7 +346,7 @@ const LobbyPage = () => {
   return (
     <div className="lobby-page">
       <div className="lobby-container">
-        <button className="lobby-back-btn" onClick={() => navigate('/home')}>
+        <button className="lobby-back-btn" onClick={() => navigate('/dashboard')}>
           <FaArrowLeft /> Back
         </button>
 
