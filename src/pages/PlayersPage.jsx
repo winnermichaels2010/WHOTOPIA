@@ -75,8 +75,16 @@ export default function PlayersPage() {
 
   return (
     <div className="players-page">
-      <div className="players-header">
+      <div className="players-hero">
+        <div className="players-hero-icon">
+          <FaUsers />
+        </div>
         <h1>Players</h1>
+        <p>See who's online and ready to play</p>
+      </div>
+
+      <div className="players-header">
+        <div />
         <div className="players-count">
           <span className="online-dot" />
           {onlineCount} online &middot; {players.length} total
