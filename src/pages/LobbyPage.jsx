@@ -413,10 +413,12 @@ const LobbyPage = () => {
               Enter the 4-character room code from your friend.
             </p>
             <div className="join-input-group">
+              <label className="join-input-label" htmlFor="room-code-input">Room Code</label>
               <input
+                id="room-code-input"
                 type="text"
                 className="join-input"
-                placeholder="Enter room code"
+                placeholder="e.g. ABCD"
                 value={joinCode}
                 onChange={(e) => {
                   setJoinCode(e.target.value.toUpperCase().slice(0, 4));
@@ -424,13 +426,16 @@ const LobbyPage = () => {
                 }}
                 maxLength={4}
                 onKeyDown={(e) => e.key === 'Enter' && handleJoinRoom()}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck="false"
               />
               <button
                 className="join-btn"
                 onClick={handleJoinRoom}
                 disabled={joining || joinCode.length < 4}
               >
-                {joining ? <FaSpinner className="spinner-icon" /> : 'Join'}
+                {joining ? <FaSpinner className="spinner-icon" /> : 'Join Room'}
               </button>
             </div>
             {joinError && <p className="join-error">{joinError}</p>}

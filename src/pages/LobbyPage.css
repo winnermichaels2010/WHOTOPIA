@@ -136,24 +136,35 @@
 
 .join-input-group {
   display: flex;
-  gap: 0.5rem;
-  max-width: 300px;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 320px;
   margin: 0 auto;
 }
 
-.join-input {
-  flex: 1;
-  padding: 0.85rem 1rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  color: var(--text-primary);
-  font-size: 1.1rem;
+.join-input-label {
+  font-size: 0.8rem;
   font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+}
+
+.join-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid var(--glass-border);
+  border-radius: 14px;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
   text-align: center;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.5em;
   outline: none;
   transition: border-color 0.2s;
+  font-family: 'Courier New', monospace;
 }
 
 .join-input:focus {
@@ -163,10 +174,13 @@
 .join-input::placeholder {
   letter-spacing: normal;
   font-weight: 400;
+  font-size: 0.95rem;
   color: var(--text-muted);
+  font-family: inherit;
 }
 
 .join-btn {
+  width: 100%;
   padding: 0.85rem 1.5rem;
   background: var(--accent-coral);
   color: #fff;
@@ -405,7 +419,92 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Small screens */
+/* Tablet & small screens */
+@media (max-width: 576px) {
+  .lobby-page {
+    padding: 1rem;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+
+  .lobby-container {
+    padding: 1.5rem;
+    border-radius: 18px;
+  }
+
+  .lobby-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .join-input-group {
+    max-width: 100%;
+  }
+
+  .join-input {
+    font-size: 1.35rem;
+    padding: 0.9rem 1rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .lobby-page {
+    padding: 0.75rem;
+    padding-top: 1.5rem;
+  }
+
+  .lobby-container {
+    padding: 1.25rem 1rem;
+    border-radius: 16px;
+  }
+
+  .lobby-header-icon {
+    font-size: 2rem;
+  }
+
+  .lobby-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .lobby-header p {
+    font-size: 0.85rem;
+  }
+
+  .lobby-tabs {
+    padding: 0.2rem;
+  }
+
+  .lobby-tab {
+    padding: 0.65rem;
+    font-size: 0.85rem;
+  }
+
+  .join-input {
+    font-size: 1.25rem;
+    letter-spacing: 0.4em;
+    padding: 0.85rem 0.75rem;
+  }
+
+  .join-btn {
+    padding: 0.85rem;
+  }
+
+  .room-code {
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+  }
+
+  .room-code-display {
+    padding: 0.6rem 1rem;
+  }
+
+  .create-room-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Room Rules */
 .room-rules-section {
   margin-bottom: 1.25rem;
 }
@@ -521,22 +620,4 @@
 
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(18px);
-}
-
-@media (max-width: 480px) {
-  .lobby-page {
-    padding: 1rem;
-  }
-
-  .lobby-container {
-    padding: 1.25rem;
-  }
-
-  .join-input-group {
-    max-width: 100%;
-  }
-
-  .room-code {
-    font-size: 1.5rem;
-  }
 }
