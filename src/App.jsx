@@ -10,7 +10,7 @@ import GamePage from './pages/GamePage';
 import HowToPlayPage from './pages/HowToPlayPage';
 import TermsPage from './pages/TermsPage';
 import SettingsPage from './pages/SettingsPage';
-import DialogsPage from './pages/DialogsPage';
+import PlayersPage from './pages/PlayersPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
 import './App.css';
@@ -77,18 +77,10 @@ function App() {
                         }
                       />
                       <Route
-                        path="/dialogs"
+                        path="/players"
                         element={
                           <ProtectedRoute>
-                            <DialogsPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/dialogs/:dialogId"
-                        element={
-                          <ProtectedRoute>
-                            <DialogsPage />
+                            <PlayersPage />
                           </ProtectedRoute>
                         }
                       />

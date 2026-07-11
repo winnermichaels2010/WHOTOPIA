@@ -5,32 +5,65 @@ import { useAuthContext } from '../context/AuthContext';
 import { FaComment, FaTimes, FaPaperPlane, FaUser } from 'react-icons/fa';
 import './ChatAside.css';
 
+const playNotificationSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.25);
+  } catch (_) {
+    /* audio not available */
+  }
+};
+
 const ChatAside = ({ roomId }) => {
   const { user } = useAuthContext();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const openRef = useRef(false);
+  const knownIdsRef = useRef(new Set());
+
+  useEffect(() => { openRef.current = open; }, [open]);
 
   useEffect(() => {
     if (!roomId) return;
 
     const unsub = onNewChatMessage(roomId, (snapshot) => {
       if (snapshot.exists()) {
+        const msg = { id: snapshot.key, ...snapshot.val() };
         setMessages(prev => {
-          const msg = { id: snapshot.key, ...snapshot.val() };
           if (prev.some(m => m.id === msg.id)) return prev;
           return [...prev, msg];
         });
+
+        if (!knownIdsRef.current.has(msg.id)) {
+          knownIdsRef.current.add(msg.id);
+          if (msg.senderId !== user?.uid && !openRef.current) {
+            setUnreadCount(prev => prev + 1);
+            playNotificationSound();
+          }
+        }
       }
     });
 
     return () => unsub();
-  }, [roomId]);
+  }, [roomId, user?.uid]);
 
   useEffect(() => {
     if (open) {
+      setUnreadCount(0);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open]);
@@ -58,6 +91,8 @@ const ChatAside = ({ roomId }) => {
     }
   };
 
+  const badgeText = unreadCount > 9 ? '9+' : unreadCount > 0 ? String(unreadCount) : null;
+
   return (
     <>
       <button
@@ -66,6 +101,7 @@ const ChatAside = ({ roomId }) => {
         title="Toggle chat"
       >
         {open ? <FaTimes /> : <FaComment />}
+        {badgeText && <span className="chat-badge">{badgeText}</span>}
       </button>
 
       <aside className={`chat-aside ${open ? 'open' : ''}`}>

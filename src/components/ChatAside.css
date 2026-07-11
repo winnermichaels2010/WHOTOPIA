@@ -1,15 +1,15 @@
 .chat-toggle {
   position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
+  top: 0.75rem;
+  right: 0.75rem;
   z-index: 1100;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--accent-gradient);
   color: white;
   border: none;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -25,6 +25,26 @@
 
 .chat-toggle.open {
   right: 320px;
+}
+
+.chat-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: #ff3b3b;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+  border: 2px solid var(--bg-primary, #1a1a2e);
 }
 
 .chat-aside {
@@ -188,6 +208,6 @@
   }
 
   .chat-toggle.open {
-    right: 1.5rem;
+    right: 0.75rem;
   }
 }

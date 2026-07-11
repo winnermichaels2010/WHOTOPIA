@@ -45,6 +45,7 @@ const LobbyPage = () => {
   });
   const roomListenerRef = useRef(null);
   const playersListenerRef = useRef(null);
+  const playersRef = useRef({});
 
   const cleanupListeners = useCallback(() => {
     if (roomListenerRef.current) {
@@ -61,6 +62,10 @@ const LobbyPage = () => {
     return cleanupListeners;
   }, [cleanupListeners]);
 
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
+
   const startRoomListeners = useCallback((roomId) => {
     cleanupListeners();
 
@@ -69,7 +74,15 @@ const LobbyPage = () => {
         const data = { id: snapshot.key, ...snapshot.val() };
         setCurrentRoom(data);
         if (data.status === 'playing') {
-          navigate(`/play/online/${roomId}`, { state: { isHost: user?.uid === data.hostId } });
+          const currentPlayers = playersRef.current;
+          const entries = Object.entries(currentPlayers);
+          const myIndex = entries.findIndex(([id]) => id === (user?.uid || 'guest'));
+          navigate(`/play/online/${roomId}`, {
+            state: {
+              isHost: user?.uid === data.hostId,
+              playerIndex: myIndex >= 0 ? myIndex : 0,
+            }
+          });
         }
       } else {
         setCurrentRoom(null);
@@ -109,7 +122,7 @@ const LobbyPage = () => {
         roomId: roomCode,
         name: `${user?.displayName || 'Player'}'s Game`,
         hostId: user?.uid || 'guest',
-        maxPlayers: 2,
+        maxPlayers: 6,
         gameMode: 'online',
         status: 'waiting',
         createdAt: Date.now(),
@@ -180,8 +193,16 @@ const LobbyPage = () => {
     if (!currentRoom) return;
     setStarting(true);
     try {
+      const entries = Object.entries(playerList);
+      const myIndex = entries.findIndex(([id]) => id === (user?.uid || 'guest'));
       await updateGameRoom(currentRoom.id, { status: 'playing', rules: gameRules });
-      navigate(`/play/online/${currentRoom.id}`, { state: { isHost: true, rules: gameRules } });
+      navigate(`/play/online/${currentRoom.id}`, {
+        state: {
+          isHost: true,
+          rules: gameRules,
+          playerIndex: myIndex >= 0 ? myIndex : 0,
+        }
+      });
     } catch (err) {
       console.error('Failed to start game:', err);
     }
@@ -236,11 +257,11 @@ const LobbyPage = () => {
                   {copied ? <FaCheck /> : <FaCopy />}
                 </button>
               </div>
-              <p className="room-code-hint">Share this code with a friend to play</p>
+              <p className="room-code-hint">Share this code with friends to play</p>
             </div>
 
             <div className="room-players-section">
-              <h3><FaUsers /> Players ({playerList.length}/2)</h3>
+              <h3><FaUsers /> Players ({playerList.length}/{currentRoom.maxPlayers || 6})</h3>
               <div className="room-players-list">
                 {playerList.map(([id, player]) => (
                   <div key={id} className={`room-player ${player.isHost ? 'host' : ''}`}>
@@ -260,13 +281,13 @@ const LobbyPage = () => {
                     </div>
                   </div>
                 ))}
-                {playerList.length < 2 && (
+                {playerList.length < (currentRoom.maxPlayers || 6) && (
                   <div className="room-player waiting">
                     <div className="player-avatar waiting-avatar">
                       <FaSpinner className="spinner-icon" />
                     </div>
                     <div className="player-info">
-                      <span className="player-name waiting-text">Waiting for opponent...</span>
+                      <span className="player-name waiting-text">Waiting for players...</span>
                     </div>
                   </div>
                 )}

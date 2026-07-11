@@ -5,9 +5,11 @@ import AIEngine from '../game/AIEngine';
 import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
-import { onGameStateChange, setGameState, getGameState } from '../firebase/services/realtimeDBService.js';
+import CardAnimationLayer from '../components/game/CardAnimationLayer';
+import { onGameStateChange, setGameState, getGameState, getGameRoom } from '../firebase/services/realtimeDBService.js';
 import ChatAside from '../components/ChatAside';
 import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaTrophy, FaMeh } from 'react-icons/fa';
+import { useAuthContext } from '../context/AuthContext';
 import './GamePage.css';
 
 const SYMBOLS = [
@@ -28,12 +30,15 @@ const GamePage = () => {
   const { mode, roomId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthContext();
   const gameRef = useRef(null);
   const aiRef = useRef(null);
   const dbUnsubRef = useRef(null);
   const isHost = location.state?.isHost === true;
   const isOnline = !!roomId;
-  const myPlayerIndex = isOnline ? (isHost ? 0 : 1) : 0;
+  const [myPlayerIndex, setMyPlayerIndex] = useState(
+    isOnline ? (location.state?.playerIndex ?? (isHost ? 0 : 1)) : 0
+  );
   const opponentIndex = myPlayerIndex === 0 ? 1 : 0;
 
   const [gameState, setGs] = useState(null);
@@ -50,6 +55,41 @@ const GamePage = () => {
   const [oneCardWarning, setOneCardWarning] = useState(null);
   const wrongMoveTimeout = useRef(null);
   const prevCardCountsRef = useRef({});
+  const drawPileRef = useRef(null);
+  const playAreaRef = useRef(null);
+  const playerAreaRef = useRef(null);
+  const opponentAreaRef = useRef(null);
+  const [flyingAnims, setFlyingAnims] = useState([]);
+  const nextAnimId = useRef(0);
+
+  const removeFlyingCard = useCallback((id) => {
+    setFlyingAnims((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const addFlyingCard = useCallback((animData) => {
+    const id = nextAnimId.current++;
+    setFlyingAnims((prev) => [...prev, { ...animData, id }]);
+  }, []);
+
+  useEffect(() => {
+    if (!isOnline || !roomId || location.state?.playerIndex != null) return;
+    const fetchIndex = async () => {
+      try {
+        const snapshot = await getGameRoom(roomId);
+        if (snapshot.exists()) {
+          const roomData = snapshot.val();
+          const roomPlayers = roomData.players || {};
+          const entries = Object.entries(roomPlayers);
+          const myId = user?.uid || 'guest';
+          const idx = entries.findIndex(([id]) => id === myId);
+          if (idx >= 0) setMyPlayerIndex(idx);
+        }
+      } catch (err) {
+        console.error('Failed to fetch player index:', err);
+      }
+    };
+    fetchIndex();
+  }, [isOnline, roomId, isHost, user, location.state]);
 
   const updateGameState = useCallback(() => {
     if (gameRef.current) {
@@ -114,7 +154,7 @@ const GamePage = () => {
     }, 2000);
   };
 
-  const handleCardClick = async (card) => {
+  const handleCardClick = async (card, event) => {
     if (!gameRef.current || gameRef.current.gameStatus !== 'playing') return;
     if (gameRef.current.currentTurn !== myPlayerIndex) return;
 
@@ -132,17 +172,33 @@ const GamePage = () => {
       return;
     }
 
+    const cardRect = event?.currentTarget?.getBoundingClientRect();
+    const playRect = playAreaRef.current?.getBoundingClientRect();
+
     const result = gameRef.current.playCard(card, myPlayerIndex);
     if (result.success) {
       await syncStateToDB();
       updateGameState();
+
+      if (cardRect && playRect) {
+        addFlyingCard({
+          card,
+          faceDown: false,
+          small: true,
+          startX: cardRect.left,
+          startY: cardRect.top,
+          endX: playRect.left + playRect.width / 2 - cardRect.width / 2,
+          endY: playRect.top + playRect.height / 2 - cardRect.height / 2,
+          width: cardRect.width,
+          height: cardRect.height,
+          type: 'play',
+        });
+      }
+
       if (result.gameOver) {
         return;
       }
-      if (isOnline && gameRef.current.currentTurn === opponentIndex) {
-        return;
-      }
-      if (gameRef.current.currentTurn === opponentIndex) {
+      if (!isOnline && gameRef.current.currentTurn !== myPlayerIndex) {
         setTimeout(() => handleAITurn(), 600);
       }
     }
@@ -151,6 +207,10 @@ const GamePage = () => {
   const handleSymbolSelect = async (symbolId) => {
     if (!pendingCard) return;
 
+    const playRect = playAreaRef.current?.getBoundingClientRect();
+    const cardW = 90;
+    const cardH = 130;
+
     const result = gameRef.current.playCard(pendingCard, myPlayerIndex, symbolId);
     setShowSymbolPicker(false);
     setPendingCard(null);
@@ -158,13 +218,26 @@ const GamePage = () => {
     if (result.success) {
       await syncStateToDB();
       updateGameState();
+
+      if (playRect) {
+        addFlyingCard({
+          card: pendingCard,
+          faceDown: false,
+          small: false,
+          startX: window.innerWidth / 2 - cardW / 2,
+          startY: window.innerHeight / 2 - cardH / 2,
+          endX: playRect.left + playRect.width / 2 - cardW / 2,
+          endY: playRect.top + playRect.height / 2 - cardH / 2,
+          width: cardW,
+          height: cardH,
+          type: 'play',
+        });
+      }
+
       if (result.gameOver) {
         return;
       }
-      if (isOnline && gameRef.current.currentTurn === opponentIndex) {
-        return;
-      }
-      if (gameRef.current.currentTurn === opponentIndex) {
+      if (!isOnline && gameRef.current.currentTurn !== myPlayerIndex) {
         setTimeout(() => handleAITurn(), 600);
       }
     }
@@ -172,6 +245,27 @@ const GamePage = () => {
 
   const handleDrawCard = async () => {
     if (!gameRef.current || gameRef.current.currentTurn !== myPlayerIndex) return;
+
+    const drawRect = drawPileRef.current?.getBoundingClientRect();
+    const handRect = playerAreaRef.current?.getBoundingClientRect();
+    const backW = 55;
+    const backH = 78;
+
+    if (drawRect && handRect) {
+      addFlyingCard({
+        card: null,
+        faceDown: true,
+        small: false,
+        startX: drawRect.left + drawRect.width / 2 - backW / 2,
+        startY: drawRect.top,
+        endX: handRect.left + handRect.width / 2 - backW / 2,
+        endY: handRect.top + handRect.height / 2 - backH / 2,
+        width: backW,
+        height: backH,
+        type: 'draw',
+      });
+      await new Promise((r) => setTimeout(r, 500));
+    }
 
     const result = gameRef.current.drawCard(myPlayerIndex);
     if (result.success) {
@@ -181,6 +275,44 @@ const GamePage = () => {
       if (gameRef.current.currentTurn === opponentIndex) {
         setTimeout(() => handleAITurn(), 600);
       }
+    }
+  };
+
+  const animateAICard = (card, type) => {
+    const oppRect = opponentAreaRef.current?.getBoundingClientRect();
+    const drawRect = drawPileRef.current?.getBoundingClientRect();
+    const playRect = playAreaRef.current?.getBoundingClientRect();
+
+    if (type === 'play' && oppRect && playRect) {
+      const w = 65;
+      const h = 95;
+      addFlyingCard({
+        card,
+        faceDown: false,
+        small: true,
+        startX: oppRect.left + oppRect.width / 2 - w / 2,
+        startY: oppRect.top,
+        endX: playRect.left + playRect.width / 2 - w / 2,
+        endY: playRect.top + playRect.height / 2 - h / 2,
+        width: w,
+        height: h,
+        type: 'play',
+      });
+    } else if (type === 'draw' && drawRect && oppRect) {
+      const w = 55;
+      const h = 78;
+      addFlyingCard({
+        card: null,
+        faceDown: true,
+        small: false,
+        startX: drawRect.left + drawRect.width / 2 - w / 2,
+        startY: drawRect.top,
+        endX: oppRect.left + oppRect.width / 2 - w / 2,
+        endY: oppRect.top + oppRect.height / 2 - h / 2,
+        width: w,
+        height: h,
+        type: 'draw',
+      });
     }
   };
 
@@ -201,6 +333,7 @@ const GamePage = () => {
           const chosenCard = validCards[0];
           const result = engine.playCard(chosenCard, 1);
           if (result.success) {
+            animateAICard(chosenCard, 'play');
             updateGameState();
             setIsAIThinking(false);
             if (engine.gameStatus === 'playing' && engine.currentTurn === 1) {
@@ -209,6 +342,7 @@ const GamePage = () => {
             return;
           }
         }
+        animateAICard(null, 'draw');
         const result = engine.drawCard(1);
         if (result.success) {
           updateGameState();
@@ -225,6 +359,7 @@ const GamePage = () => {
       const shouldDraw = ai.shouldDraw(validCards, state);
 
       if (shouldDraw || validCards.length === 0) {
+        animateAICard(null, 'draw');
         const result = engine.drawCard(1);
         if (result.success) {
           updateGameState();
@@ -244,6 +379,7 @@ const GamePage = () => {
         const chosenSymbol = ai.chooseSymbol(engine.getGameState(1));
         const result = engine.playCard(chosenCard, 1, chosenSymbol);
         if (result.success) {
+          animateAICard(chosenCard, 'play');
           updateGameState();
           if (result.gameOver) {
             setIsAIThinking(false);
@@ -253,6 +389,7 @@ const GamePage = () => {
       } else if (chosenCard) {
         const result = engine.playCard(chosenCard, 1);
         if (result.success) {
+          animateAICard(chosenCard, 'play');
           updateGameState();
           if (result.gameOver) {
             setIsAIThinking(false);
@@ -281,6 +418,63 @@ const GamePage = () => {
     prevCardCountsRef.current = current;
   }, [gameState, myPlayerIndex]);
 
+  const prevTopCardRef = useRef(null);
+  useEffect(() => {
+    if (!isOnline || !gameState?.topCard || !gameRef.current) return;
+    const prevTop = prevTopCardRef.current;
+    const newTop = gameState.topCard;
+    if (prevTop && newTop && prevTop.id !== newTop.id && gameState.currentTurn === myPlayerIndex) {
+      const oppRect = opponentAreaRef.current?.getBoundingClientRect();
+      const playRect = playAreaRef.current?.getBoundingClientRect();
+      if (oppRect && playRect) {
+        const w = 65;
+        const h = 95;
+        addFlyingCard({
+          card: newTop,
+          faceDown: false,
+          small: true,
+          startX: oppRect.left + oppRect.width / 2 - w / 2,
+          startY: oppRect.top,
+          endX: playRect.left + playRect.width / 2 - w / 2,
+          endY: playRect.top + playRect.height / 2 - h / 2,
+          width: w,
+          height: h,
+          type: 'play',
+        });
+      }
+    }
+    prevTopCardRef.current = newTop;
+  }, [gameState?.topCard, gameState?.currentTurn, isOnline, myPlayerIndex, addFlyingCard]);
+
+  const prevOppCardCountRef = useRef(null);
+  useEffect(() => {
+    if (!isOnline || !gameState?.players || !gameRef.current) return;
+    const opp = gameState.players.find((p) => p.id !== myPlayerIndex);
+    if (!opp) return;
+    const prevCount = prevOppCardCountRef.current;
+    if (prevCount !== null && opp.cardCount > prevCount && gameState.currentTurn === myPlayerIndex) {
+      const drawRect = drawPileRef.current?.getBoundingClientRect();
+      const oppRect = opponentAreaRef.current?.getBoundingClientRect();
+      if (drawRect && oppRect) {
+        const w = 55;
+        const h = 78;
+        addFlyingCard({
+          card: null,
+          faceDown: true,
+          small: false,
+          startX: drawRect.left + drawRect.width / 2 - w / 2,
+          startY: drawRect.top,
+          endX: oppRect.left + oppRect.width / 2 - w / 2,
+          endY: oppRect.top + oppRect.height / 2 - h / 2,
+          width: w,
+          height: h,
+          type: 'draw',
+        });
+      }
+    }
+    prevOppCardCountRef.current = opp.cardCount;
+  }, [gameState?.players, gameState?.currentTurn, isOnline, myPlayerIndex, addFlyingCard]);
+
   useEffect(() => {
     if (oneCardWarning) {
       const t = setTimeout(() => setOneCardWarning(null), 4000);
@@ -300,7 +494,7 @@ const GamePage = () => {
     setShowStartScreen(false);
     setWaitingForGame(true);
 
-    dbUnsubRef.current = onGameStateChange(roomId, (snapshot) => {
+    dbUnsubRef.current = onGameStateChange(roomId, async (snapshot) => {
       try {
         if (snapshot.exists()) {
           const dbState = snapshot.val();
@@ -321,9 +515,23 @@ const GamePage = () => {
         } else if (isHost) {
           const engine = new GameEngine();
           gameRef.current = engine;
-          engine.initGame(['You', 'Opponent'], 5);
-          engine.players[0].name = 'You';
-          engine.players[1].name = 'Opponent';
+
+          let names = ['Player 1', 'Player 2'];
+          try {
+            const roomSnapshot = await getGameRoom(roomId);
+            if (roomSnapshot.exists()) {
+              const roomData = roomSnapshot.val();
+              const roomPlayers = roomData.players || {};
+              const entries = Object.entries(roomPlayers);
+              if (entries.length >= 2) {
+                names = entries.map(([, p]) => p.displayName || 'Player');
+              }
+            }
+          } catch (err) {
+            console.error('Failed to fetch room players:', err);
+          }
+
+          engine.initGame(names, 5);
 
           const state = engine.exportState();
           (async () => {
@@ -497,6 +705,10 @@ const GamePage = () => {
   if (gameState?.gameStatus === 'finished') {
     const isWinner = gameState.winner === myPlayerIndex;
     const winnerName = gameState.players?.[gameState.winner]?.name || (isOnline ? 'Opponent' : 'Computer');
+    const opponentNames = gameState.players
+      ?.filter((_, i) => i !== myPlayerIndex)
+      .map(p => p.name)
+      .join(', ') || (isOnline ? 'Opponent' : 'Computer');
     return (
       <div className="game-page">
         <div className="game-over-screen">
@@ -505,7 +717,9 @@ const GamePage = () => {
             <h1 className="game-over-title">{isWinner ? 'You Win!' : 'You Lost!'}</h1>
             <p className="game-over-subtitle">
               {isWinner
-                ? `Congratulations! You defeated ${winnerName}!`
+                ? (gameState.players.length > 2
+                  ? 'Congratulations! You won the game!'
+                  : `Congratulations! You defeated ${opponentNames}!`)
                 : `${winnerName} won. Try again next time.`}
             </p>
             <div className="game-over-actions">
@@ -564,7 +778,9 @@ const GamePage = () => {
           </button>
           <div className="game-info-bar">
             <div className="game-status">
-              {gameState?.currentTurn === myPlayerIndex ? 'Your Turn' : "Opponent's Turn"}
+              {gameState?.currentTurn === myPlayerIndex
+                ? 'Your Turn'
+                : `${gameState?.players?.[gameState?.currentTurn]?.name || 'Opponent'}'s Turn`}
               {isAIThinking && <span className="thinking-dots"> thinking<span>.</span><span>.</span><span>.</span></span>}
               {gameState?.drawPenalty > 0 && gameState?.currentTurn === myPlayerIndex && (
                 <span className="draw-penalty-warning"> (Draw {gameState.drawPenalty}!)</span>
@@ -590,14 +806,16 @@ const GamePage = () => {
       )}
 
       <div className="game-layout">
-        <OpponentArea
-          players={gameState?.players || []}
-          currentPlayerId={myPlayerIndex}
-        />
+        <div ref={opponentAreaRef}>
+          <OpponentArea
+            players={gameState?.players || []}
+            currentPlayerId={myPlayerIndex}
+          />
+        </div>
 
         <div className="game-board">
           <div className="board-center">
-            <div className="draw-pile" onClick={handleDrawCard}>
+            <div ref={drawPileRef} className="draw-pile" onClick={handleDrawCard}>
               <div className="draw-pile-stack">
                 <div className="draw-pile-card back"></div>
                 <div className="draw-pile-card back"></div>
@@ -607,7 +825,7 @@ const GamePage = () => {
               <span className="draw-count">{gameState?.deckSize || 0} left</span>
             </div>
 
-            <div className="played-card-area">
+            <div ref={playAreaRef} className="played-card-area">
               {gameState?.topCard ? (
                 <Card card={gameState.topCard} disabled small={false} />
               ) : (
@@ -621,7 +839,7 @@ const GamePage = () => {
           </div>
         </div>
 
-        <div className="player-area">
+        <div ref={playerAreaRef} className="player-area">
           <div className="player-label">
             Your Hand ({gameState?.myHand?.length || 0} cards)
           </div>
@@ -635,6 +853,8 @@ const GamePage = () => {
           />
         </div>
       </div>
+
+      <CardAnimationLayer animations={flyingAnims} onRemove={removeFlyingCard} />
     </div>
   );
 };

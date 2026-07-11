@@ -396,6 +396,16 @@ export const getOnlineUsers = async () => {
   return snapshot;
 };
 
+/**
+ * Listen to all presence changes in real-time
+ * @param {Function} callback - Callback function with (snapshot)
+ * @returns {Function} Unsubscribe function
+ */
+export const onAllPresenceChange = (callback) => {
+  const presenceRef = ref(realtimeDB, PRESENCE_PATH);
+  return onValue(presenceRef, callback);
+};
+
 // ============ UTILITY FUNCTIONS ============
 
 /**

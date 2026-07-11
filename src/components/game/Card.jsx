@@ -21,9 +21,9 @@ const SPECIAL_LABELS = {
 const Card = ({ card, onClick, selected, disabled, small }) => {
   if (!card) return null;
 
-  const handleClick = () => {
+  const handleClick = (e) => {
     if (!disabled && onClick) {
-      onClick(card);
+      onClick(card, e);
     }
   };
 

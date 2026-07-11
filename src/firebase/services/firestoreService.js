@@ -184,6 +184,16 @@ export const updatePlayerStats = async (players, winner) => {
 const LEADERBOARDS_COLLECTION = 'leaderboards';
 
 /**
+ * Get all registered users (no limit)
+ * @returns {Promise<QuerySnapshot>} All users snapshot
+ */
+export const getAllUsers = async () => {
+  const q = query(collection(firestore, USERS_COLLECTION));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot;
+};
+
+/**
  * Get global leaderboard
  * @param {number} limitCount - Maximum number of players to retrieve
  * @returns {Promise<QuerySnapshot>} Leaderboard snapshot
