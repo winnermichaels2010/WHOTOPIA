@@ -27,6 +27,27 @@ import {
   resetPassword,
   deleteUser
 } from '../services/authService.js';
+import { createUserProfile, getUserProfile } from '../services/firestoreService.js';
+
+/**
+ * Ensures a Firestore user profile exists for the given user.
+ * Creates one with default stats if it doesn't exist yet.
+ */
+const ensureUserProfile = async (firebaseUser) => {
+  if (!firebaseUser || firebaseUser.isAnonymous) return;
+  try {
+    const snap = await getUserProfile(firebaseUser.uid);
+    if (!snap.exists()) {
+      await createUserProfile(firebaseUser.uid, {
+        displayName: firebaseUser.displayName || 'Player',
+        email: firebaseUser.email || '',
+        photoURL: firebaseUser.photoURL || ''
+      });
+    }
+  } catch {
+    // Firestore profile creation is best-effort
+  }
+};
 
 /**
  * Custom hook for Firebase Authentication
@@ -55,6 +76,7 @@ export const useAuth = () => {
       setError(null);
       setLoading(true);
       const newUser = await registerWithEmail(email, password, displayName);
+      await ensureUserProfile(newUser);
       setUser(newUser);
       return { success: true, user: newUser };
     } catch (err) {
@@ -70,6 +92,7 @@ export const useAuth = () => {
       setError(null);
       setLoading(true);
       const loggedInUser = await signInWithEmail(email, password);
+      await ensureUserProfile(loggedInUser);
       setUser(loggedInUser);
       return { success: true, user: loggedInUser };
     } catch (err) {
@@ -85,6 +108,7 @@ export const useAuth = () => {
       setError(null);
       setLoading(true);
       const googleUser = await signInWithGoogle();
+      await ensureUserProfile(googleUser);
       setUser(googleUser);
       return { success: true, user: googleUser };
     } catch (err) {

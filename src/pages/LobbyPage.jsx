@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, set } from 'firebase/database';
 import { useAuthContext } from '../context/AuthContext';
-import { FaArrowLeft, FaGamepad, FaCopy, FaCheck, FaSpinner, FaUsers, FaUser, FaPlay, FaCog, FaChevronDown } from 'react-icons/fa';
+import {
+  FaArrowLeft, FaGamepad, FaCopy, FaCheck, FaSpinner, FaUsers, FaUser,
+  FaPlay, FaCog, FaChevronDown, FaShieldAlt, FaLayerGroup, FaMagic,
+} from 'react-icons/fa';
 import {
   getGameRoom,
   updateGameRoom,
@@ -15,6 +18,19 @@ import { addPlayerToRoom } from '../firebase/services/realtimeDBService.js';
 import './LobbyPage.css';
 
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+const DEFAULT_RULES = {
+  startingCards: 5,
+  stackingPenalties: true,
+  allowMultiPlay: false,
+  enablePick2: true,
+  enablePick3: true,
+  enableSuspension: true,
+  enableHoldOn: true,
+  enableGeneralMarket: true,
+  allowDefendPick2: true,
+  allowDefendPick3: true,
+};
 
 const generateRoomCode = () => {
   let code = '';
@@ -38,11 +54,8 @@ const LobbyPage = () => {
   const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [gameRules, setGameRules] = useState({
-    startingCards: 5,
-    stackingPenalties: true,
-    allowMultiPlay: false,
-  });
+  const [showRulesPopup, setShowRulesPopup] = useState(false);
+  const [gameRules, setGameRules] = useState({ ...DEFAULT_RULES });
   const roomListenerRef = useRef(null);
   const playersListenerRef = useRef(null);
   const playersRef = useRef({});
@@ -136,6 +149,7 @@ const LobbyPage = () => {
       });
 
       startRoomListeners(roomCode);
+      setShowRulesPopup(true);
     } catch (err) {
       console.error('Failed to create room:', err);
       setCreateError('Failed to create room. Check your connection and try again.');
@@ -234,6 +248,21 @@ const LobbyPage = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleApplyDefaultRules = () => {
+    setGameRules({ ...DEFAULT_RULES });
+  };
+
+  const handleSaveRulesAndClose = async () => {
+    if (currentRoom) {
+      try {
+        await updateGameRoom(currentRoom.id, { rules: gameRules });
+      } catch (err) {
+        console.error('Failed to save rules:', err);
+      }
+    }
+    setShowRulesPopup(false);
   };
 
   const isHost = currentRoom && (user?.uid === currentRoom.hostId);
@@ -360,6 +389,154 @@ const LobbyPage = () => {
             )}
           </div>
         </div>
+
+        {/* Room Rules Popup */}
+        {showRulesPopup && (
+          <div className="rules-popup-overlay" onClick={() => setShowRulesPopup(false)}>
+            <div className="rules-popup" onClick={e => e.stopPropagation()}>
+              <div className="rules-popup-header">
+                <div className="rules-popup-icon">
+                  <FaCog />
+                </div>
+                <h2>Set Game Rules</h2>
+                <p>Configure the rules for this match. Players will see these rules before joining.</p>
+              </div>
+
+              <div className="rules-popup-body">
+                <div className="rules-popup-section">
+                  <h4><FaLayerGroup /> Card Effects</h4>
+                  <p className="rules-section-desc">Enable or disable special card effects</p>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Pick 2</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameRules.enablePick2}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, enablePick2: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Pick 3</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameRules.enablePick3}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, enablePick3: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Suspension</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameRules.enableSuspension}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, enableSuspension: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Hold On</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameRules.enableHoldOn}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, enableHoldOn: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">General Market</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameRules.enableGeneralMarket}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, enableGeneralMarket: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="rules-popup-section">
+                  <h4><FaShieldAlt /> Defense Rules</h4>
+                  <p className="rules-section-desc">Allow players to counter penalty cards</p>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Defend Pick 2</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameRules.allowDefendPick2}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, allowDefendPick2: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Defend Pick 3</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameRules.allowDefendPick3}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, allowDefendPick3: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Stack Penalties</span>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameRules.stackingPenalties}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, stackingPenalties: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="rules-popup-section">
+                  <h4><FaGamepad /> Game Setup</h4>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Starting Cards</span>
+                    <select
+                      value={gameRules.startingCards}
+                      onChange={(e) => setGameRules(prev => ({ ...prev, startingCards: Number(e.target.value) }))}
+                    >
+                      <option value={3}>3 cards</option>
+                      <option value={5}>5 cards</option>
+                      <option value={7}>7 cards</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rules-popup-footer">
+                <button className="rules-popup-btn default" onClick={handleApplyDefaultRules}>
+                  <FaMagic /> Use Default Settings
+                </button>
+                <button className="rules-popup-btn save" onClick={handleSaveRulesAndClose}>
+                  <FaCheck /> Save & Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -25,7 +25,8 @@ import {
   updatePlayerStats,
   getGlobalLeaderboard,
   getWeeklyLeaderboard,
-  onLeaderboardChange
+  onLeaderboardChange,
+  clearUserMatchHistory
 } from '../services/firestoreService.js';
 
 /**
@@ -142,7 +143,17 @@ export const useMatchHistory = (userId, limitCount = 20) => {
     loading,
     error,
     fetchMatchHistory,
-    recordMatch: recordNewMatch
+    recordMatch: recordNewMatch,
+    clearHistory: async () => {
+      if (!userId) return { success: false, error: 'No user ID' };
+      try {
+        await clearUserMatchHistory(userId);
+        setMatches([]);
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    }
   };
 };
 

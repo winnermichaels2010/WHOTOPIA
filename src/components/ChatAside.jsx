@@ -19,7 +19,7 @@ const playNotificationSound = () => {
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.25);
-  } catch (_) {
+  } catch {
     /* audio not available */
   }
 };

@@ -80,7 +80,7 @@ export default function PlayersPage() {
           <FaUsers />
         </div>
         <h1>Players</h1>
-        <p>See who's online and ready to play</p>
+        <p>See who&apos;s online and ready to play</p>
       </div>
 
       <div className="players-header">

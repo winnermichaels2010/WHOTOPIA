@@ -7,6 +7,7 @@ import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
 import CardAnimationLayer from '../components/game/CardAnimationLayer';
 import { onGameStateChange, setGameState, getGameState, getGameRoom } from '../firebase/services/realtimeDBService.js';
+import { recordMatch } from '../firebase/services/firestoreService.js';
 import ChatAside from '../components/ChatAside';
 import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaTrophy, FaMeh } from 'react-icons/fa';
 import { useAuthContext } from '../context/AuthContext';
@@ -60,7 +61,10 @@ const GamePage = () => {
   const playerAreaRef = useRef(null);
   const opponentAreaRef = useRef(null);
   const [flyingAnims, setFlyingAnims] = useState([]);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showCup, setShowCup] = useState(false);
   const nextAnimId = useRef(0);
+  const matchSavedRef = useRef(false);
 
   const removeFlyingCard = useCallback((id) => {
     setFlyingAnims((prev) => prev.filter((a) => a.id !== id));
@@ -489,6 +493,28 @@ const GamePage = () => {
   }, []);
 
   useEffect(() => {
+    if (gameState?.gameStatus !== 'finished' || !gameRef.current || matchSavedRef.current) return;
+    matchSavedRef.current = true;
+
+    const myId = user?.uid || 'local-player';
+    const isWinner = gameState.winner === myPlayerIndex;
+
+    const players = isOnline
+      ? [myId, 'opponent']
+      : [myId];
+
+    const winnerId = isWinner ? myId : (isOnline ? 'opponent' : null);
+
+    recordMatch({
+      players,
+      winner: winnerId,
+      gameMode: isOnline ? 'online' : 'ai',
+      duration: 0,
+      scores: {}
+    }).catch(() => {});
+  }, [gameState?.gameStatus, isOnline, myPlayerIndex, user]);
+
+  useEffect(() => {
     if (!isOnline || !roomId) return;
 
     setShowStartScreen(false);
@@ -568,6 +594,7 @@ const GamePage = () => {
       dbUnsubRef.current();
       dbUnsubRef.current = null;
     }
+    matchSavedRef.current = false;
     setShowStartScreen(true);
     setShowSymbolPicker(false);
     setPendingCard(null);
@@ -575,6 +602,8 @@ const GamePage = () => {
     setDealing(false);
     setWaitingForGame(false);
     setWrongMoveMessage(null);
+    setShowCelebration(false);
+    setShowCup(false);
     if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
     gameRef.current = null;
     aiRef.current = null;
@@ -709,19 +738,99 @@ const GamePage = () => {
       ?.filter((_, i) => i !== myPlayerIndex)
       .map(p => p.name)
       .join(', ') || (isOnline ? 'Opponent' : 'Computer');
+
+    if (isWinner && !showCelebration && !showCup) {
+      setShowCelebration(true);
+      setTimeout(() => {
+        setShowCelebration(false);
+        setShowCup(true);
+      }, 2800);
+    }
+
+    if (showCelebration && isWinner) {
+      return (
+        <div className="game-page">
+          <div className="celebration-screen">
+            <div className="bubble-container">
+              {Array.from({ length: 30 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="celebration-bubble"
+                  style={{
+                    '--delay': `${Math.random() * 0.8}s`,
+                    '--x': `${Math.random() * 100}%`,
+                    '--size': `${Math.random() * 30 + 15}px`,
+                    '--drift': `${(Math.random() - 0.5) * 200}px`,
+                    '--hue': `${Math.random() * 60 + 340}`,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="celebration-text">
+              <FaTrophy className="celebration-trophy-icon" />
+              <span>You Win!</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (showCup && isWinner) {
+      return (
+        <div className="game-page">
+          <div className="game-over-screen cup-screen">
+            <div className="winner-cup-container">
+              <div className="cup-glow" />
+              <div className="cup-particles">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="cup-particle" style={{ '--angle': `${i * 30}deg`, '--delay': `${i * 0.1}s` }} />
+                ))}
+              </div>
+              <div className="winner-cup">
+                <div className="cup-body">
+                  <div className="cup-rim" />
+                  <div className="cup-bowl">
+                    <div className="cup-shine" />
+                  </div>
+                  <div className="cup-stem" />
+                  <div className="cup-base" />
+                </div>
+                <div className="cup-ring cup-ring-1" />
+                <div className="cup-ring cup-ring-2" />
+                <div className="cup-ring cup-ring-3" />
+              </div>
+              <div className="winner-crown">
+                <span>👑</span>
+              </div>
+            </div>
+            <h1 className="game-over-title victory-title">Victory!</h1>
+            <p className="game-over-subtitle">
+              {gameState.players.length > 2
+                ? 'Congratulations! You won the game!'
+                : `Congratulations! You defeated ${opponentNames}!`}
+            </p>
+            <div className="game-over-actions">
+              {!isOnline && (
+                <button className="game-over-btn primary" onClick={handleRestart}>
+                  <FaRedo /> Play Again
+                </button>
+              )}
+              <button className="game-over-btn secondary" onClick={() => navigate('/dashboard')}>
+                <FaArrowLeft /> Back to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="game-page">
         <div className="game-over-screen">
           <div className="game-over-content">
-            <div className="game-over-icon">{isWinner ? <FaTrophy /> : <FaMeh />}</div>
-            <h1 className="game-over-title">{isWinner ? 'You Win!' : 'You Lost!'}</h1>
-            <p className="game-over-subtitle">
-              {isWinner
-                ? (gameState.players.length > 2
-                  ? 'Congratulations! You won the game!'
-                  : `Congratulations! You defeated ${opponentNames}!`)
-                : `${winnerName} won. Try again next time.`}
-            </p>
+            <div className="game-over-icon loss-icon"><FaMeh /></div>
+            <h1 className="game-over-title">You Lost!</h1>
+            <p className="game-over-subtitle">{winnerName} won. Try again next time.</p>
             <div className="game-over-actions">
               {!isOnline && (
                 <button className="game-over-btn primary" onClick={handleRestart}>

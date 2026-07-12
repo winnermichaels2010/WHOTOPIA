@@ -39,7 +39,6 @@ import {
   limit,
   onSnapshot,
   serverTimestamp,
-  increment,
   runTransaction
 } from 'firebase/firestore';
 import { firestore } from '../index.js';
@@ -64,7 +63,9 @@ export const createUserProfile = async (userId, userData) => {
       totalMatches: 0,
       wins: 0,
       losses: 0,
-      winRate: 0
+      winRate: 0,
+      winStreak: 0,
+      bestWinStreak: 0
     }
   }, { merge: true });
 };
@@ -150,32 +151,44 @@ export const getUserMatchHistory = async (userId, limitCount = 20) => {
  * @returns {Promise<void>}
  */
 export const updatePlayerStats = async (players, winner) => {
-  const batch = players.map(async (playerId) => {
+  for (const playerId of players) {
     const userRef = doc(firestore, USERS_COLLECTION, playerId);
     const isWinner = playerId === winner;
-    
-    await updateDoc(userRef, {
-      'stats.totalMatches': increment(1),
-      'stats.wins': isWinner ? increment(1) : increment(0),
-      'stats.losses': isWinner ? increment(0) : increment(1)
-    });
-  });
-  
-  await Promise.all(batch);
-  
-  // Recalculate win rates for all players
-  for (const playerId of players) {
-    const userSnap = await getDoc(doc(firestore, USERS_COLLECTION, playerId));
-    if (userSnap.exists()) {
-      const stats = userSnap.data().stats;
-      const winRate = stats.totalMatches > 0 
-        ? (stats.wins / stats.totalMatches) * 100 
-        : 0;
-      
-      await updateDoc(doc(firestore, USERS_COLLECTION, playerId), {
-        'stats.winRate': winRate
+
+    await runTransaction(firestore, async (transaction) => {
+      const userSnap = await transaction.get(userRef);
+
+      if (!userSnap.exists()) {
+        transaction.set(userRef, {
+          stats: {
+            totalMatches: 1,
+            wins: isWinner ? 1 : 0,
+            losses: isWinner ? 0 : 1,
+            winRate: isWinner ? 100 : 0,
+            winStreak: isWinner ? 1 : 0,
+            bestWinStreak: isWinner ? 1 : 0
+          }
+        }, { merge: true });
+        return;
+      }
+
+      const stats = userSnap.data().stats || {};
+      const totalMatches = (stats.totalMatches || 0) + 1;
+      const wins = (stats.wins || 0) + (isWinner ? 1 : 0);
+      const losses = (stats.losses || 0) + (isWinner ? 0 : 1);
+      const winRate = totalMatches > 0 ? (wins / totalMatches) * 100 : 0;
+      const winStreak = isWinner ? (stats.winStreak || 0) + 1 : 0;
+      const bestWinStreak = Math.max(stats.bestWinStreak || 0, winStreak);
+
+      transaction.update(userRef, {
+        'stats.totalMatches': totalMatches,
+        'stats.wins': wins,
+        'stats.losses': losses,
+        'stats.winRate': winRate,
+        'stats.winStreak': winStreak,
+        'stats.bestWinStreak': bestWinStreak
       });
-    }
+    });
   }
 };
 
@@ -258,6 +271,38 @@ export const executeTransaction = async (transactionFunction) => {
  */
 export const deleteDocument = async (collectionName, docId) => {
   await deleteDoc(doc(firestore, collectionName, docId));
+};
+
+/**
+ * Clear all match history for a specific user
+ * Deletes all match documents where the user is a player, then resets their stats.
+ * @param {string} userId - Firebase Auth user ID
+ * @returns {Promise<void>}
+ */
+export const clearUserMatchHistory = async (userId) => {
+  const q = query(
+    collection(firestore, MATCH_HISTORY_COLLECTION),
+    where('players', 'array-contains', userId)
+  );
+  const snapshot = await getDocs(q);
+  const batch = [];
+  snapshot.docs.forEach((docSnap) => {
+    batch.push(deleteDoc(doc(firestore, MATCH_HISTORY_COLLECTION, docSnap.id)));
+  });
+  await Promise.all(batch);
+
+  const userRef = doc(firestore, USERS_COLLECTION, userId);
+  await updateDoc(userRef, {
+    stats: {
+      totalMatches: 0,
+      wins: 0,
+      losses: 0,
+      winRate: 0,
+      winStreak: 0,
+      bestWinStreak: 0,
+    },
+    updatedAt: serverTimestamp(),
+  });
 };
 
 // Export firestore instance for direct access if needed

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e63946"/>
+      <stop offset="100%" stop-color="#f72585"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- Card body -->
+  <rect x="48" y="32" width="416" height="448" rx="48" ry="48" fill="url(#bg)" filter="url(#shadow)"/>
+  <!-- Subtle shine overlay -->
+  <rect x="48" y="32" width="416" height="224" rx="48" ry="48" fill="url(#shine)"/>
+  <!-- White border inset -->
+  <rect x="72" y="56" width="368" height="400" rx="36" ry="36" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="4"/>
+  <!-- Star symbol (primary Whot symbol) -->
+  <polygon
+    points="256,108 290,200 388,200 308,260 336,352 256,296 176,352 204,260 124,200 222,200"
+    fill="#ffffff"
+    opacity="0.95"
+  />
+  <!-- Small gold accent dot at star center -->
+  <circle cx="256" cy="236" r="18" fill="#ffd700" opacity="0.9"/>
+</svg>

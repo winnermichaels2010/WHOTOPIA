@@ -12,7 +12,7 @@
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+  transition: width 0.25s ease, background 0.2s ease;
   position: fixed;
   top: 0;
   left: 0;
@@ -45,11 +45,6 @@
   font-size: 1.75rem;
   color: var(--accent-red);
   flex-shrink: 0;
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.sidebar-logo:hover .logo-icon {
-  transform: rotate(15deg) scale(1.15);
 }
 
 .logo-text {
@@ -73,7 +68,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.25s ease;
+  transition: color 0.15s ease, background 0.15s ease;
   flex-shrink: 0;
 }
 
@@ -101,7 +96,7 @@
 .nav-arrow {
   margin-left: auto;
   font-size: 0.7rem;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.2s ease;
 }
 
 .nav-arrow.expanded {
@@ -114,18 +109,6 @@
   gap: 0.15rem;
   padding-left: 2.5rem;
   margin-top: 0.15rem;
-  animation: submenuSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes submenuSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .nav-item.sub-item {
@@ -149,30 +132,16 @@
   font-weight: 500;
   cursor: pointer;
   border-radius: 0.75rem;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.15s ease, background 0.15s ease;
   width: 100%;
   text-align: left;
   white-space: nowrap;
   position: relative;
 }
 
-.nav-item::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-}
-
-.nav-item:hover::before {
-  opacity: 1;
-}
-
 .nav-item:hover {
   color: var(--text-primary);
-  transform: translateX(2px);
+  background: var(--hover-bg);
 }
 
 .nav-item:active {
@@ -182,6 +151,7 @@
 .nav-item.active {
   color: var(--accent-red);
   font-weight: 600;
+  background: var(--active-bg);
 }
 
 .nav-item.active::after {
@@ -194,7 +164,6 @@
   height: 60%;
   border-radius: 0 2px 2px 0;
   background: var(--accent-gradient);
-  box-shadow: 0 0 8px rgba(230, 57, 70, 0.4);
 }
 
 .nav-icon {
@@ -204,15 +173,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.nav-item:hover .nav-icon {
-  transform: scale(1.12);
-}
-
-.nav-item.active .nav-icon {
-  filter: drop-shadow(0 0 4px rgba(230, 57, 70, 0.3));
 }
 
 .nav-label {
@@ -226,14 +186,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-}
-
-.theme-toggle .nav-icon {
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.theme-toggle:hover .nav-icon {
-  transform: rotate(20deg) scale(1.15);
 }
 
 .theme-toggle:hover {
@@ -256,7 +208,7 @@
 .sidebar-main {
   flex: 1;
   margin-left: 260px;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: margin-left 0.25s ease;
   min-height: 100vh;
   background: var(--bg-primary);
 }
@@ -279,14 +231,13 @@
   padding: 0.65rem;
   border-radius: 0.75rem;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.25s ease;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .mobile-hamburger:hover {
   background: var(--hover-bg);
   border-color: var(--accent-red);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .mobile-hamburger:active {
@@ -298,15 +249,9 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
   z-index: 1000;
-  animation: overlayFadeIn 0.3s ease;
-}
-
-@keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 /* Responsive */
@@ -319,18 +264,6 @@
 
   .sidebar.mobile-open {
     transform: translateX(0);
-    animation: drawerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes drawerSlideIn {
-    from {
-      transform: translateX(-100%);
-      opacity: 0.5;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
   }
 
   .sidebar-main {
