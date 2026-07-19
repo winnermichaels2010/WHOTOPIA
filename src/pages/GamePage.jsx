@@ -6,7 +6,8 @@ import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
 import CardAnimationLayer from '../components/game/CardAnimationLayer';
-import { onGameStateChange, setGameState, getGameState, getGameRoom } from '../firebase/services/realtimeDBService.js';
+import { onGameStateChange, setGameState, getGameState, getGameRoom, onRoomPlayersChange, removePlayerFromRoom, realtimeDB } from '../firebase/services/realtimeDBService.js';
+import { ref, remove, onDisconnect } from 'firebase/database';
 import { recordMatch } from '../firebase/services/firestoreService.js';
 import ChatAside from '../components/ChatAside';
 import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaTrophy, FaMeh } from 'react-icons/fa';
@@ -63,6 +64,12 @@ const GamePage = () => {
   const [flyingAnims, setFlyingAnims] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showCup, setShowCup] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [opponentLeft, setOpponentLeft] = useState(false);
+  const [leftNotification, setLeftNotification] = useState(null);
+  const leftNotificationTimer = useRef(null);
+  const initialPlayerCountRef = useRef(null);
+  const roomPlayersUnsubRef = useRef(null);
   const nextAnimId = useRef(0);
   const matchSavedRef = useRef(false);
 
@@ -489,6 +496,7 @@ const GamePage = () => {
   useEffect(() => {
     return () => {
       if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
+      if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
     };
   }, []);
 
@@ -529,10 +537,32 @@ const GamePage = () => {
           setWrongMoveMessage(null);
           if (gameRef.current) {
             gameRef.current.importState(cleanState);
+
+            const engine = gameRef.current;
+            if (engine.gameStatus === 'playing') {
+              const emptyIdx = engine.players.findIndex(p => p.hand.length === 0);
+              if (emptyIdx !== -1) {
+                engine.gameStatus = 'finished';
+                engine.winner = emptyIdx;
+                engine.lastAction = `${engine.players[emptyIdx].name} wins!`;
+                syncStateToDB();
+              }
+            }
+
             updateGameState();
           } else {
             const engine = new GameEngine();
             engine.importState(cleanState);
+
+            if (engine.gameStatus === 'playing') {
+              const emptyIdx = engine.players.findIndex(p => p.hand.length === 0);
+              if (emptyIdx !== -1) {
+                engine.gameStatus = 'finished';
+                engine.winner = emptyIdx;
+                engine.lastAction = `${engine.players[emptyIdx].name} wins!`;
+              }
+            }
+
             gameRef.current = engine;
             setWaitingForGame(false);
             setShowStartScreen(false);
@@ -589,11 +619,80 @@ const GamePage = () => {
     };
   }, [isOnline, roomId, isHost, updateGameState]);
 
+  useEffect(() => {
+    const onOffline = () => setIsOffline(true);
+    const onOnline = () => setIsOffline(false);
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
+    return () => {
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOnline || !roomId || showStartScreen) return;
+
+    roomPlayersUnsubRef.current = onRoomPlayersChange(roomId, (snapshot) => {
+      if (!snapshot.exists()) return;
+      const currentPlayers = snapshot.val();
+      const entries = Object.entries(currentPlayers);
+      const count = entries.length;
+      const myId = user?.uid || 'guest';
+
+      if (initialPlayerCountRef.current === null) {
+        initialPlayerCountRef.current = count;
+        return;
+      }
+
+      if (count < initialPlayerCountRef.current) {
+        const leftEntry = entries.find(([id]) => id !== myId);
+        const leftName = leftEntry?.[1]?.displayName || 'A player';
+
+        if (initialPlayerCountRef.current === 2) {
+          setOpponentLeft(true);
+        } else {
+          setLeftNotification(`${leftName} left the game`);
+          if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
+          leftNotificationTimer.current = setTimeout(() => setLeftNotification(null), 7000);
+        }
+      }
+      initialPlayerCountRef.current = count;
+    });
+
+    return () => {
+      if (roomPlayersUnsubRef.current) {
+        roomPlayersUnsubRef.current();
+        roomPlayersUnsubRef.current = null;
+      }
+      if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
+    };
+  }, [isOnline, roomId, showStartScreen, user]);
+
+  useEffect(() => {
+    if (!isOnline || !roomId) return;
+    const myId = user?.uid || 'guest';
+    const playerRef = ref(realtimeDB, `gameRooms/${roomId}/players/${myId}`);
+    onDisconnect(playerRef).remove();
+    const countRef = ref(realtimeDB, `gameRooms/${roomId}/currentPlayers`);
+    onDisconnect(countRef).transaction((current) => Math.max(0, (current || 0) - 1));
+    return () => {
+      onDisconnect(playerRef).cancel();
+      onDisconnect(countRef).cancel();
+    };
+  }, [isOnline, roomId, user]);
+
   const handleRestart = () => {
     if (dbUnsubRef.current) {
       dbUnsubRef.current();
       dbUnsubRef.current = null;
     }
+    if (roomPlayersUnsubRef.current) {
+      roomPlayersUnsubRef.current();
+      roomPlayersUnsubRef.current = null;
+    }
+    if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
+    initialPlayerCountRef.current = null;
     matchSavedRef.current = false;
     setShowStartScreen(true);
     setShowSymbolPicker(false);
@@ -604,6 +703,9 @@ const GamePage = () => {
     setWrongMoveMessage(null);
     setShowCelebration(false);
     setShowCup(false);
+    setIsOffline(false);
+    setOpponentLeft(false);
+    setLeftNotification(null);
     if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
     gameRef.current = null;
     aiRef.current = null;
@@ -912,6 +1014,40 @@ const GamePage = () => {
 
       {oneCardWarning && (
         <div className="one-card-warning">{oneCardWarning}</div>
+      )}
+
+      {leftNotification && (
+        <div className="player-left-notification">{leftNotification}</div>
+      )}
+
+      {isOffline && isOnline && (
+        <div className="connection-overlay">
+          <div className="connection-popup">
+            <div className="connection-popup-icon offline-icon">
+              <span>📡</span>
+            </div>
+            <h2>Connection Lost</h2>
+            <p>Trying to reconnect...</p>
+            <button className="connection-leave-btn" onClick={() => navigate('/dashboard')}>
+              Leave Game
+            </button>
+          </div>
+        </div>
+      )}
+
+      {opponentLeft && isOnline && (
+        <div className="connection-overlay">
+          <div className="connection-popup">
+            <div className="connection-popup-icon opponent-left-icon">
+              <span>👋</span>
+            </div>
+            <h2>Opponent Left</h2>
+            <p>Your opponent has disconnected.</p>
+            <button className="connection-leave-btn" onClick={() => navigate('/dashboard')}>
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="game-layout">
