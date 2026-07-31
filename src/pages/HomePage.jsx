@@ -10,12 +10,9 @@ import {
   FaPlay,
   FaArrowRight,
   FaCalendarAlt,
-  FaFire,
   FaLayerGroup,
   FaHistory,
   FaMedal,
-  FaBolt,
-  FaStar,
   FaTrashAlt,
   FaExclamationTriangle,
   FaCheck,
@@ -74,9 +71,6 @@ const HomePage = () => {
 
   const stats = profile?.stats || {};
   const totalMatches = stats.totalMatches || 0;
-  const winRate = stats.winRate != null ? Math.round(stats.winRate) : null;
-  const winStreak = stats.winStreak || 0;
-  const bestWinStreak = stats.bestWinStreak || 0;
   const totalWins = stats.wins || 0;
 
   const handleClearHistory = async () => {
@@ -140,39 +134,6 @@ const HomePage = () => {
           <div className="dash-stat-card-info">
             <span className="dash-stat-card-value">{totalWins}</span>
             <span className="dash-stat-card-label">Total Wins</span>
-          </div>
-          <div className="dash-stat-card-decoration" />
-        </div>
-
-        <div className="dash-stat-card dash-stat-card--rate">
-          <div className="dash-stat-card-icon">
-            <FaBolt />
-          </div>
-          <div className="dash-stat-card-info">
-            <span className="dash-stat-card-value">{winRate != null ? `${winRate}%` : '—'}</span>
-            <span className="dash-stat-card-label">Win Rate</span>
-          </div>
-          <div className="dash-stat-card-decoration" />
-        </div>
-
-        <div className="dash-stat-card dash-stat-card--streak">
-          <div className="dash-stat-card-icon">
-            <FaFire />
-          </div>
-          <div className="dash-stat-card-info">
-            <span className="dash-stat-card-value">{winStreak}</span>
-            <span className="dash-stat-card-label">Win Streak</span>
-          </div>
-          <div className="dash-stat-card-decoration" />
-        </div>
-
-        <div className="dash-stat-card dash-stat-card--best">
-          <div className="dash-stat-card-icon">
-            <FaStar />
-          </div>
-          <div className="dash-stat-card-info">
-            <span className="dash-stat-card-value">{bestWinStreak || '—'}</span>
-            <span className="dash-stat-card-label">Best Streak</span>
           </div>
           <div className="dash-stat-card-decoration" />
         </div>

@@ -24,6 +24,13 @@ const playNotificationSound = () => {
   }
 };
 
+const formatTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+};
+
 const ChatAside = ({ roomId }) => {
   const { user } = useAuthContext();
   const [messages, setMessages] = useState([]);
@@ -31,10 +38,14 @@ const ChatAside = ({ roomId }) => {
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [muted, setMuted] = useState(() => localStorage.getItem('chat_notifications_muted') === '1');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [dragId, setDragId] = useState(null);
+  const [dragX, setDragX] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const openRef = useRef(false);
   const knownIdsRef = useRef(new Set());
+  const dragRef = useRef(null);
 
   useEffect(() => { openRef.current = open; }, [open]);
 
@@ -46,6 +57,14 @@ const ChatAside = ({ roomId }) => {
         const msg = { id: snapshot.key, ...snapshot.val() };
         setMessages(prev => {
           if (prev.some(m => m.id === msg.id)) return prev;
+          const pendingIdx = prev.findIndex(
+            m => m.id && m.id.startsWith('local-') && m.senderId === msg.senderId && m.text === msg.text
+          );
+          if (pendingIdx !== -1) {
+            const next = [...prev];
+            next[pendingIdx] = { ...msg, status: 'sent' };
+            return next;
+          }
           return [...prev, msg];
         });
 
@@ -78,18 +97,77 @@ const ChatAside = ({ roomId }) => {
     const text = input.trim();
     if (!text || !roomId || !user) return;
 
-    try {
-      const messagesRef = ref(realtimeDB, `chat/${roomId}`);
-      await push(messagesRef, {
+    const tempId = `local-${Date.now()}`;
+    const replyTo = replyingTo
+      ? { id: replyingTo.id, text: replyingTo.text, senderName: replyingTo.senderName }
+      : null;
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: tempId,
         text,
         senderId: user.uid,
         senderName: user.displayName || 'Player',
         timestamp: Date.now(),
-      });
-      setInput('');
+        status: 'sending',
+        replyTo,
+      },
+    ]);
+    setInput('');
+    setReplyingTo(null);
+
+    try {
+      const messagesRef = ref(realtimeDB, `chat/${roomId}`);
+      const payload = {
+        text,
+        senderId: user.uid,
+        senderName: user.displayName || 'Player',
+        timestamp: Date.now(),
+      };
+      if (replyTo) payload.replyTo = replyTo;
+      const newRef = await push(messagesRef, payload);
+      const realKey = newRef.key;
+      knownIdsRef.current.add(realKey);
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: realKey, status: 'sent' } : m));
     } catch (err) {
       console.error('Failed to send message:', err);
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
     }
+  };
+
+  const startReply = (msg) => {
+    setReplyingTo(msg);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const handleMsgPointerDown = (msg, e) => {
+    dragRef.current = { x: e.clientX, y: e.clientY, msg };
+    setDragId(msg.id);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const handleMsgPointerMove = (e) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (dx > 0 && Math.abs(dx) > Math.abs(dy)) {
+      setDragX(Math.min(dx, 80));
+    } else {
+      setDragX(0);
+    }
+  };
+
+  const handleMsgPointerUp = (e) => {
+    const drag = dragRef.current;
+    const dx = drag ? e.clientX - drag.x : 0;
+    if (drag && dx > 50) {
+      startReply(drag.msg);
+    }
+    dragRef.current = null;
+    setDragId(null);
+    setDragX(0);
   };
 
   const toggleMute = () => {
@@ -133,20 +211,61 @@ const ChatAside = ({ roomId }) => {
               <p>No messages yet. Say hello!</p>
             </div>
           )}
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`chat-message ${msg.senderId === user?.uid ? 'own' : ''}`}
-            >
-              <div className="chat-message-sender">
-                <FaUser className="chat-message-avatar" />
-                <span>{msg.senderName}</span>
+          {messages.map((msg) => {
+            const status = msg.status || (msg.senderId === user?.uid ? 'sent' : null);
+            return (
+              <div
+                key={msg.id}
+                className={`chat-message ${msg.senderId === user?.uid ? 'own' : ''} ${dragId === msg.id ? 'dragging' : ''}`}
+                style={{ transform: dragId === msg.id ? `translateX(${dragX}px)` : undefined }}
+                onPointerDown={(e) => handleMsgPointerDown(msg, e)}
+                onPointerMove={handleMsgPointerMove}
+                onPointerUp={handleMsgPointerUp}
+                onPointerCancel={handleMsgPointerUp}
+              >
+                <div className="chat-message-header">
+                  <div className="chat-message-sender">
+                    <FaUser className="chat-message-avatar" />
+                    <span>{msg.senderName}</span>
+                  </div>
+                  <div className="chat-message-meta">
+                    <span className="chat-message-time">{formatTime(msg.timestamp)}</span>
+                    {msg.senderId === user?.uid && (
+                      <span className={`chat-message-status ${status === 'sent' ? 'sent' : 'pending'}`}>
+                        {status === 'sent' ? '✓' : '!!'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {msg.replyTo && (
+                  <div className="chat-reply-preview">
+                    <span className="chat-reply-preview-name">{msg.replyTo.senderName}</span>
+                    <span className="chat-reply-preview-text">{msg.replyTo.text}</span>
+                  </div>
+                )}
+                <div className="chat-message-text">{msg.text}</div>
               </div>
-              <div className="chat-message-text">{msg.text}</div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
+
+        {replyingTo && (
+          <div className="chat-reply-bar">
+            <div className="chat-reply-bar-info">
+              <span className="chat-reply-bar-label">Replying to {replyingTo.senderName}</span>
+              <span className="chat-reply-bar-text">{replyingTo.text}</span>
+            </div>
+            <button
+              className="chat-reply-bar-close"
+              onClick={() => setReplyingTo(null)}
+              title="Cancel reply"
+              aria-label="Cancel reply"
+            >
+              <FaTimes />
+            </button>
+          </div>
+        )}
 
         <form className="chat-input-area" onSubmit={sendMessage}>
           <input
@@ -154,7 +273,7 @@ const ChatAside = ({ roomId }) => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message..."
+            placeholder={replyingTo ? 'Reply...' : 'Type a message...'}
             maxLength={200}
           />
           <button type="submit" disabled={!input.trim()}>

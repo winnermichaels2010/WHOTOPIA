@@ -51,10 +51,23 @@ const Sidebar = ({ children }) => {
       {/* Mobile overlay */}
       {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
 
-      {/* Mobile hamburger */}
-      <button className={`mobile-hamburger ${mobileOpen ? 'hidden' : ''}`} onClick={() => setMobileOpen(true)}>
-        <FaBars />
-      </button>
+      {/* Mobile top bar */}
+      <div className="mobile-topbar">
+        <button
+          className={`mobile-hamburger ${mobileOpen ? 'hidden' : ''}`}
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+        >
+          <FaBars />
+        </button>
+        <button
+          className="mobile-theme-toggle"
+          onClick={toggleTheme}
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? <FaSun /> : <FaMoon />}
+        </button>
+      </div>
 
       {/* Sidebar */}
       <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
@@ -106,7 +119,7 @@ const Sidebar = ({ children }) => {
         </nav>
 
         <div className="sidebar-footer">
-          <button className="nav-item theme-toggle" onClick={toggleTheme}>
+          <button className="nav-item theme-toggle theme-toggle-desktop" onClick={toggleTheme}>
             <span className="nav-icon">{isDark ? <FaSun /> : <FaMoon />}</span>
             {!collapsed && <span className="nav-label">{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
           </button>
