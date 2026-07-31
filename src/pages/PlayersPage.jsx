@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
 import { getAllUsers } from '../firebase/services/firestoreService';
-import { onAllPresenceChange } from '../firebase/services/realtimeDBService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { FaUsers } from 'react-icons/fa';
 import './PlayersPage.css';
@@ -23,13 +22,10 @@ function getColor(name) {
 export default function PlayersPage() {
   const { user, loading: authLoading } = useAuthContext();
   const [players, setPlayers] = useState([]);
-  const [presence, setPresence] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
-
-    let unsubPresence = null;
 
     const load = async () => {
       try {
@@ -47,18 +43,6 @@ export default function PlayersPage() {
     };
 
     load();
-
-    unsubPresence = onAllPresenceChange((snapshot) => {
-      if (snapshot.exists()) {
-        setPresence(snapshot.val());
-      } else {
-        setPresence({});
-      }
-    });
-
-    return () => {
-      if (typeof unsubPresence === 'function') unsubPresence();
-    };
   }, [authLoading]);
 
   if (authLoading || loading) {
@@ -71,8 +55,6 @@ export default function PlayersPage() {
     );
   }
 
-  const onlineCount = players.filter((p) => presence[p.id]?.online).length;
-
   return (
     <div className="players-page">
       <div className="players-hero">
@@ -80,21 +62,19 @@ export default function PlayersPage() {
           <FaUsers />
         </div>
         <h1>Players</h1>
-        <p>See who&apos;s online and ready to play</p>
+        <p>See all registered players</p>
       </div>
 
       <div className="players-header">
         <div />
         <div className="players-count">
-          <span className="online-dot" />
-          {onlineCount} online &middot; {players.length} total
+          {players.length} players
         </div>
       </div>
 
       {players.length > 0 ? (
         <div className="players-list">
           {players.map((player) => {
-            const isOnline = !!presence[player.id]?.online;
             const isCurrent = player.id === user?.uid;
             const name = player.displayName || player.email || 'Unknown';
             const stats = player.stats || {};
@@ -111,7 +91,6 @@ export default function PlayersPage() {
                   >
                     {getInitials(name)}
                   </div>
-                  <div className={isOnline ? 'online-indicator' : 'offline-indicator'} />
                 </div>
 
                 <div className="player-info">
@@ -125,10 +104,6 @@ export default function PlayersPage() {
                     <span>Win Rate: {stats.winRate ? Math.round(stats.winRate) : 0}%</span>
                   </div>
                 </div>
-
-                <span className={`player-status-badge ${isOnline ? 'online' : 'offline'}`}>
-                  {isOnline ? 'Online' : 'Offline'}
-                </span>
               </div>
             );
           })}

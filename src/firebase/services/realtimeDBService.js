@@ -40,7 +40,6 @@ import {
   onChildAdded,
   push,
   serverTimestamp,
-  onDisconnect,
   off,
   runTransaction
 } from 'firebase/database';
@@ -322,88 +321,6 @@ export const onNewChatMessage = (roomId, callback) => {
 export const clearChat = async (roomId) => {
   const messagesRef = ref(realtimeDB, `${CHAT_PATH}/${roomId}`);
   await remove(messagesRef);
-};
-
-// ============ PLAYER PRESENCE ============
-
-const PRESENCE_PATH = 'presence';
-
-/**
- * Set user online status
- * @param {string} userId - User ID
- * @param {Object} presenceData - Presence information
- * @returns {Promise<void>}
- */
-export const setUserPresence = async (userId, presenceData) => {
-  const presenceRef = ref(realtimeDB, `${PRESENCE_PATH}/${userId}`);
-  await set(presenceRef, {
-    ...presenceData,
-    lastSeen: serverTimestamp()
-  });
-  
-  // Set up disconnect handler
-  const disconnectRef = ref(realtimeDB, `${PRESENCE_PATH}/${userId}`);
-  onDisconnect(disconnectRef).set({
-    online: false,
-    lastSeen: serverTimestamp(),
-    currentRoom: null
-  });
-};
-
-/**
- * Get user presence status
- * @param {string} userId - User ID
- * @returns {Promise<DataSnapshot>} Presence snapshot
- */
-export const getUserPresence = async (userId) => {
-  const presenceRef = ref(realtimeDB, `${PRESENCE_PATH}/${userId}`);
-  const snapshot = await get(presenceRef);
-  return snapshot;
-};
-
-/**
- * Listen to user presence changes
- * @param {string} userId - User ID
- * @param {Function} callback - Callback function with (snapshot)
- * @returns {Function} Unsubscribe function
- */
-export const onUserPresenceChange = (userId, callback) => {
-  const presenceRef = ref(realtimeDB, `${PRESENCE_PATH}/${userId}`);
-  return onValue(presenceRef, callback);
-};
-
-/**
- * Set user offline
- * @param {string} userId - User ID
- * @returns {Promise<void>}
- */
-export const setUserOffline = async (userId) => {
-  const presenceRef = ref(realtimeDB, `${PRESENCE_PATH}/${userId}`);
-  await set(presenceRef, {
-    online: false,
-    lastSeen: serverTimestamp(),
-    currentRoom: null
-  });
-};
-
-/**
- * Get all online users
- * @returns {Promise<DataSnapshot>} Online users snapshot
- */
-export const getOnlineUsers = async () => {
-  const presenceRef = ref(realtimeDB, PRESENCE_PATH);
-  const snapshot = await get(presenceRef);
-  return snapshot;
-};
-
-/**
- * Listen to all presence changes in real-time
- * @param {Function} callback - Callback function with (snapshot)
- * @returns {Function} Unsubscribe function
- */
-export const onAllPresenceChange = (callback) => {
-  const presenceRef = ref(realtimeDB, PRESENCE_PATH);
-  return onValue(presenceRef, callback);
 };
 
 // ============ UTILITY FUNCTIONS ============

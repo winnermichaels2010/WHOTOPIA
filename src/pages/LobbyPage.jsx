@@ -40,6 +40,8 @@ const LobbyPage = () => {
   const [currentRoom, setCurrentRoom] = useState(null);
   const [players, setPlayers] = useState({});
   const [copied, setCopied] = useState(false);
+  const [leftNotification, setLeftNotification] = useState(null);
+  const leftNotificationTimer = useRef(null);
   const [starting, setStarting] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showRulesPopup, setShowRulesPopup] = useState(false);
@@ -47,6 +49,7 @@ const LobbyPage = () => {
   const roomListenerRef = useRef(null);
   const playersListenerRef = useRef(null);
   const playersRef = useRef({});
+  const prevPlayersRef = useRef(null);
 
   const cleanupListeners = useCallback(() => {
     if (roomListenerRef.current) {
@@ -60,7 +63,10 @@ const LobbyPage = () => {
   }, []);
 
   useEffect(() => {
-    return cleanupListeners;
+    return () => {
+      cleanupListeners();
+      if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
+    };
   }, [cleanupListeners]);
 
   useEffect(() => {
@@ -92,8 +98,25 @@ const LobbyPage = () => {
 
     playersListenerRef.current = onRoomPlayersChange(roomId, (snapshot) => {
       if (snapshot.exists()) {
-        setPlayers(snapshot.val());
+        const nextPlayers = snapshot.val();
+        const prev = prevPlayersRef.current;
+        if (prev) {
+          const prevEntries = Object.entries(prev);
+          const nextIds = new Set(Object.keys(nextPlayers));
+          if (Object.keys(nextPlayers).length < prevEntries.length) {
+            const leftEntry = prevEntries.find(([id]) => !nextIds.has(id));
+            const leftName = leftEntry?.[1]?.displayName || 'A player';
+            if (leftEntry?.[0] !== (user?.uid || 'guest')) {
+              setLeftNotification(`${leftName} left`);
+              if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
+              leftNotificationTimer.current = setTimeout(() => setLeftNotification(null), 7000);
+            }
+          }
+        }
+        prevPlayersRef.current = nextPlayers;
+        setPlayers(nextPlayers);
       } else {
+        prevPlayersRef.current = null;
         setPlayers({});
       }
     });
@@ -227,8 +250,11 @@ const LobbyPage = () => {
       console.error('Failed to leave room:', err);
     }
     cleanupListeners();
+    if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
     setCurrentRoom(null);
     setPlayers({});
+    setLeftNotification(null);
+    prevPlayersRef.current = null;
   };
 
   const handleCopyCode = () => {
@@ -275,6 +301,9 @@ const LobbyPage = () => {
           </button>
 
           <div className="lobby-room-view">
+            {leftNotification && (
+              <div className="player-left-notification">{leftNotification}</div>
+            )}
             <div className="room-code-section">
               <FaGamepad className="room-code-icon" />
               <h2>Room Code</h2>

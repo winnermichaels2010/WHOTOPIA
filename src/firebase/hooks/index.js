@@ -20,7 +20,6 @@ export {
   useRoomPlayers, 
   useGameState, 
   useChat, 
-  usePresence, 
   useRealtimeDB 
 } from './useRealtimeDB.js';
 

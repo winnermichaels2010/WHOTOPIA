@@ -118,15 +118,6 @@
   gap: 0.4rem;
 }
 
-.players-count .online-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
-}
-
 /* List */
 .players-list {
   display: grid;
@@ -185,33 +176,12 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.online-indicator {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #22c55e;
-  border: 2.5px solid var(--card-bg, #1a1a2e);
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
-}
-
-.offline-indicator {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #6b7280;
-  border: 2.5px solid var(--card-bg, #1a1a2e);
-}
-
 .player-info {
   flex: 1;
   min-width: 0;
 }
+
+/* Current user highlight */
 
 .player-name {
   font-size: 0.95rem;
@@ -255,27 +225,6 @@
 .player-stats .losses {
   color: #ef4444;
   font-weight: 600;
-}
-
-.player-status-badge {
-  flex-shrink: 0;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.3rem 0.75rem;
-  border-radius: 2rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.player-status-badge.online {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.1);
-}
-
-.player-status-badge.offline {
-  background: rgba(107, 114, 128, 0.1);
-  color: #6b7280;
 }
 
 /* Current user highlight */
@@ -399,13 +348,6 @@
     font-size: 0.9rem;
   }
 
-  .online-indicator,
-  .offline-indicator {
-    width: 12px;
-    height: 12px;
-    border-width: 2px;
-  }
-
   .player-name {
     font-size: 0.88rem;
   }
@@ -418,11 +360,6 @@
   .player-stats {
     gap: 0.5rem;
     font-size: 0.7rem;
-  }
-
-  .player-status-badge {
-    font-size: 0.62rem;
-    padding: 0.2rem 0.55rem;
   }
 
   .players-empty {

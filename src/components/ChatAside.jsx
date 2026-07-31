@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { realtimeDB, onNewChatMessage } from '../firebase/services/realtimeDBService';
 import { ref, push } from 'firebase/database';
 import { useAuthContext } from '../context/AuthContext';
-import { FaComment, FaTimes, FaPaperPlane, FaUser } from 'react-icons/fa';
+import { FaComment, FaTimes, FaPaperPlane, FaUser, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import './ChatAside.css';
 
 const playNotificationSound = () => {
@@ -30,6 +30,7 @@ const ChatAside = ({ roomId }) => {
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [muted, setMuted] = useState(() => localStorage.getItem('chat_notifications_muted') === '1');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const openRef = useRef(false);
@@ -52,14 +53,14 @@ const ChatAside = ({ roomId }) => {
           knownIdsRef.current.add(msg.id);
           if (msg.senderId !== user?.uid && !openRef.current) {
             setUnreadCount(prev => prev + 1);
-            playNotificationSound();
+            if (!muted) playNotificationSound();
           }
         }
       }
     });
 
     return () => unsub();
-  }, [roomId, user?.uid]);
+  }, [roomId, user?.uid, muted]);
 
   useEffect(() => {
     if (open) {
@@ -91,6 +92,14 @@ const ChatAside = ({ roomId }) => {
     }
   };
 
+  const toggleMute = () => {
+    setMuted(prev => {
+      const next = !prev;
+      localStorage.setItem('chat_notifications_muted', next ? '1' : '0');
+      return next;
+    });
+  };
+
   const badgeText = unreadCount > 9 ? '9+' : unreadCount > 0 ? String(unreadCount) : null;
 
   return (
@@ -108,6 +117,14 @@ const ChatAside = ({ roomId }) => {
         <div className="chat-header">
           <FaComment className="chat-header-icon" />
           <h3>Chat</h3>
+          <button
+            className={`chat-sound-toggle ${muted ? 'muted' : ''}`}
+            onClick={toggleMute}
+            title={muted ? 'Unmute message notifications' : 'Mute message notifications'}
+            aria-label={muted ? 'Unmute message notifications' : 'Mute message notifications'}
+          >
+            {muted ? <FaVolumeMute /> : <FaVolumeUp />}
+          </button>
         </div>
 
         <div className="chat-messages">

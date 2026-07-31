@@ -1,30 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import { addReview, onReviewsChange } from '../firebase/services/firestoreService';
+import { addReview } from '../firebase/services/firestoreService';
 import {
   FaStar,
   FaPaperPlane,
   FaComments,
-  FaClock,
   FaCheck,
   FaSpinner,
 } from 'react-icons/fa';
 import './ReviewPage.css';
-
-const formatReviewTime = (timestamp) => {
-  if (!timestamp) return '';
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
 
 const ReviewPage = () => {
   const { user } = useAuthContext();
@@ -32,20 +16,6 @@ const ReviewPage = () => {
   const [suggestion, setSuggestion] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onReviewsChange((snapshot) => {
-      const reviewsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setReviews(reviewsData);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,11 +38,6 @@ const ReviewPage = () => {
       console.error('Failed to submit review:', error);
     }
     setSubmitting(false);
-  };
-
-  const getInitial = (name) => {
-    if (!name) return 'P';
-    return name.charAt(0).toUpperCase();
   };
 
   return (
@@ -147,54 +112,6 @@ const ReviewPage = () => {
             </button>
           </form>
         </div>
-      </section>
-
-      {/* Reviews List */}
-      <section className="review-list-section">
-        <div className="review-list-header">
-          <h2>All Reviews</h2>
-          <span className="review-count-badge">{reviews.length}</span>
-        </div>
-
-        {loading ? (
-          <div className="review-loading">
-            <FaSpinner className="spin" />
-            <span>Loading reviews...</span>
-          </div>
-        ) : reviews.length === 0 ? (
-          <div className="review-empty">
-            <FaComments className="review-empty-icon" />
-            <p>No reviews yet. Be the first to share your feedback!</p>
-          </div>
-        ) : (
-          <div className="review-list">
-            {reviews.map((item) => (
-              <div key={item.id} className="review-card">
-                <div className="review-card-header">
-                  <div className="review-card-avatar">
-                    <span>{getInitial(item.displayName)}</span>
-                  </div>
-                  <div className="review-card-meta">
-                    <span className="review-card-name">{item.displayName}</span>
-                    <span className="review-card-time">
-                      <FaClock />
-                      {formatReviewTime(item.timestamp)}
-                    </span>
-                  </div>
-                </div>
-                <div className="review-card-body">
-                  <p className="review-card-text">{item.review}</p>
-                  {item.suggestion && (
-                    <div className="review-card-suggestion">
-                      <span className="review-suggestion-label">Suggestion:</span>
-                      <p>{item.suggestion}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
     </div>
   );

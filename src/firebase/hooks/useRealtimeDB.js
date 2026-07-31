@@ -33,12 +33,7 @@ import {
   deleteActiveGame,
   sendChatMessage,
   onChatMessages,
-  clearChat,
-  setUserPresence,
-  getUserPresence,
-  onUserPresenceChange,
-  setUserOffline,
-  getOnlineUsers
+  clearChat
 } from '../services/realtimeDBService.js';
 
 /**
@@ -405,74 +400,6 @@ export const useChat = (roomId) => {
 };
 
 /**
- * Custom hook for Player Presence
- * @param {string} userId - User ID to monitor presence for
- * @returns {Object} Presence data and methods
- */
-export const usePresence = (userId) => {
-  const [presence, setPresence] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const unsubscribe = onUserPresenceChange(userId, (snapshot) => {
-      if (snapshot.exists()) {
-        setPresence(snapshot.val());
-      } else {
-        setPresence(null);
-      }
-      setLoading(false);
-      setError(null);
-    }, (err) => {
-      setError(err.message);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [userId]);
-
-  const setOnline = useCallback(async (presenceData) => {
-    if (!userId) return { success: false, error: 'No user ID' };
-    
-    try {
-      setError(null);
-      await setUserPresence(userId, presenceData);
-      return { success: true };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
-    }
-  }, [userId]);
-
-  const setOffline = useCallback(async () => {
-    if (!userId) return { success: false, error: 'No user ID' };
-    
-    try {
-      setError(null);
-      await setUserOffline(userId);
-      return { success: true };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
-    }
-  }, [userId]);
-
-  return {
-    presence,
-    loading,
-    error,
-    setOnline,
-    setOffline
-  };
-};
-
-/**
  * Combined hook for all Realtime Database operations
  * @returns {Object} All Realtime Database methods and hooks
  */
@@ -489,9 +416,6 @@ export const useRealtimeDB = () => {
     // Chat hooks
     useChat,
     
-    // Presence hooks
-    usePresence,
-    
     // Direct service methods (for advanced usage)
     createGameRoom,
     getGameRoom,
@@ -505,11 +429,7 @@ export const useRealtimeDB = () => {
     updateGameState,
     deleteActiveGame,
     sendChatMessage,
-    clearChat,
-    setUserPresence,
-    getUserPresence,
-    setUserOffline,
-    getOnlineUsers
+    clearChat
   };
 };
 

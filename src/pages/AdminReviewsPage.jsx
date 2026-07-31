@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
-import { onReviewsChange, addPostedReview } from '../firebase/services/firestoreService';
+import { onReviewsChange } from '../firebase/services/firestoreService';
 import {
   FaStar,
   FaComments,
@@ -9,9 +9,6 @@ import {
   FaEnvelope,
   FaSpinner,
   FaEye,
-  FaPaperPlane,
-  FaCheck,
-  FaTimes,
   FaSignOutAlt,
 } from 'react-icons/fa';
 import './AdminReviewsPage.css';
@@ -36,10 +33,6 @@ const AdminReviewsPage = () => {
   const navigate = useNavigate();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [postingReview, setPostingReview] = useState(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [posting, setPosting] = useState(false);
-  const [posted, setPosted] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onReviewsChange((snapshot) => {
@@ -56,43 +49,6 @@ const AdminReviewsPage = () => {
   const getInitial = (name) => {
     if (!name) return 'P';
     return name.charAt(0).toUpperCase();
-  };
-
-  const handlePostClick = (review) => {
-    setPostingReview(review);
-    setShowConfirmModal(true);
-    setPosted(false);
-  };
-
-  const handleConfirmPost = async () => {
-    if (!postingReview) return;
-
-    setPosting(true);
-    try {
-      await addPostedReview({
-        displayName: postingReview.displayName,
-        email: postingReview.email,
-        review: postingReview.review,
-        suggestion: postingReview.suggestion || '',
-        originalReviewId: postingReview.id
-      });
-      setPosted(true);
-      setTimeout(() => {
-        setShowConfirmModal(false);
-        setPostingReview(null);
-        setPosted(false);
-      }, 1500);
-    } catch (error) {
-      console.error('Failed to post review:', error);
-    }
-    setPosting(false);
-  };
-
-  const handleCancelPost = () => {
-    if (posting) return;
-    setShowConfirmModal(false);
-    setPostingReview(null);
-    setPosted(false);
   };
 
   const handleSignOut = () => {
@@ -197,66 +153,11 @@ const AdminReviewsPage = () => {
                     </div>
                   )}
                 </div>
-                <div className="admin-review-card-actions">
-                  <button
-                    className="admin-review-post-btn"
-                    onClick={() => handlePostClick(item)}
-                  >
-                    <FaPaperPlane />
-                    Post to Homepage
-                  </button>
-                </div>
               </div>
             ))}
           </div>
         )}
       </section>
-
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="admin-review-modal-overlay" onClick={handleCancelPost}>
-          <div className="admin-review-modal" onClick={e => e.stopPropagation()}>
-            <div className="admin-review-modal-icon">
-              {posted ? <FaCheck /> : <FaPaperPlane />}
-            </div>
-            <h3>{posted ? 'Review Posted!' : 'Post Review to Homepage?'}</h3>
-            <p>
-              {posted
-                ? 'The review has been posted to the homepage.'
-                : `Are you sure you want to post ${postingReview?.displayName}'s review to the homepage? It will be visible to all visitors.`}
-            </p>
-            {!posted && (
-              <div className="admin-review-modal-actions">
-                <button
-                  className="admin-review-modal-btn confirm"
-                  onClick={handleConfirmPost}
-                  disabled={posting}
-                >
-                  {posting ? (
-                    <>
-                      <FaSpinner className="spin" />
-                      Posting...
-                    </>
-                  ) : (
-                    <>
-                      <FaPaperPlane />
-                      Yes, Post It
-                    </>
-                  )}
-                </button>
-                <button
-                  className="admin-review-modal-btn cancel"
-                  onClick={handleCancelPost}
-                  disabled={posting}
-                >
-                  <FaTimes />
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

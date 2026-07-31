@@ -77,9 +77,10 @@ const GamePage = () => {
   const [showCup, setShowCup] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [opponentLeft, setOpponentLeft] = useState(false);
+  const [cancelledByName, setCancelledByName] = useState('');
   const [leftNotification, setLeftNotification] = useState(null);
   const leftNotificationTimer = useRef(null);
-  const initialPlayerCountRef = useRef(null);
+  const prevPlayersRef = useRef(null);
   const roomPlayersUnsubRef = useRef(null);
   const nextAnimId = useRef(0);
   const matchSavedRef = useRef(false);
@@ -657,26 +658,30 @@ const GamePage = () => {
       const currentPlayers = snapshot.val();
       const entries = Object.entries(currentPlayers);
       const count = entries.length;
-      const myId = user?.uid || 'guest';
 
-      if (initialPlayerCountRef.current === null) {
-        initialPlayerCountRef.current = count;
+      if (prevPlayersRef.current === null) {
+        prevPlayersRef.current = currentPlayers;
         return;
       }
 
-      if (count < initialPlayerCountRef.current) {
-        const leftEntry = entries.find(([id]) => id !== myId);
+      const prevEntries = Object.entries(prevPlayersRef.current);
+      const prevCount = prevEntries.length;
+
+      if (count < prevCount) {
+        const currentIds = new Set(entries.map(([id]) => id));
+        const leftEntry = prevEntries.find(([id]) => !currentIds.has(id));
         const leftName = leftEntry?.[1]?.displayName || 'A player';
 
-        if (initialPlayerCountRef.current === 2) {
+        if (prevCount === 2) {
           setOpponentLeft(true);
+          setCancelledByName(leftName);
         } else {
-          setLeftNotification(`${leftName} left the game`);
+          setLeftNotification(`${leftName} left`);
           if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
           leftNotificationTimer.current = setTimeout(() => setLeftNotification(null), 7000);
         }
       }
-      initialPlayerCountRef.current = count;
+      prevPlayersRef.current = currentPlayers;
     });
 
     return () => {
@@ -708,7 +713,7 @@ const GamePage = () => {
       roomPlayersUnsubRef.current = null;
     }
     if (leftNotificationTimer.current) clearTimeout(leftNotificationTimer.current);
-    initialPlayerCountRef.current = null;
+    prevPlayersRef.current = null;
     matchSavedRef.current = false;
     setShowStartScreen(true);
     setShowSymbolPicker(false);
@@ -721,6 +726,7 @@ const GamePage = () => {
     setShowCup(false);
     setIsOffline(false);
     setOpponentLeft(false);
+    setCancelledByName('');
     setLeftNotification(null);
     if (wrongMoveTimeout.current) clearTimeout(wrongMoveTimeout.current);
     gameRef.current = null;
@@ -1057,8 +1063,8 @@ const GamePage = () => {
             <div className="connection-popup-icon opponent-left-icon">
               <span>👋</span>
             </div>
-            <h2>Opponent Left</h2>
-            <p>Your opponent has disconnected.</p>
+            <h2>Game Cancelled</h2>
+            <p>{cancelledByName || 'Your opponent'} left the game.</p>
             <button className="connection-leave-btn" onClick={() => navigate('/dashboard')}>
               Back to Dashboard
             </button>
