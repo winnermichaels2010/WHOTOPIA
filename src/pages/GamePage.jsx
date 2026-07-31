@@ -11,7 +11,7 @@ import { onGameStateChange, setGameState, getGameState, getGameRoom, onRoomPlaye
 import { ref, onDisconnect } from 'firebase/database';
 import { recordMatch } from '../firebase/services/firestoreService.js';
 import ChatAside from '../components/ChatAside';
-import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaTrophy, FaMeh } from 'react-icons/fa';
+import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaMeh } from 'react-icons/fa';
 import { useAuthContext } from '../context/AuthContext';
 import './GamePage.css';
 
@@ -891,7 +891,7 @@ const GamePage = () => {
               ))}
             </div>
             <div className="celebration-text">
-              <FaTrophy className="celebration-trophy-icon" />
+              <span className="celebration-trophy-icon">🏆</span>
               <span>You Win!</span>
             </div>
           </div>
@@ -911,17 +911,7 @@ const GamePage = () => {
                 ))}
               </div>
               <div className="winner-cup">
-                <div className="cup-body">
-                  <div className="cup-rim" />
-                  <div className="cup-bowl">
-                    <div className="cup-shine" />
-                  </div>
-                  <div className="cup-stem" />
-                  <div className="cup-base" />
-                </div>
-                <div className="cup-ring cup-ring-1" />
-                <div className="cup-ring cup-ring-2" />
-                <div className="cup-ring cup-ring-3" />
+                <span className="winner-cup-emoji">🏆</span>
               </div>
               <div className="winner-crown">
                 <span>👑</span>
