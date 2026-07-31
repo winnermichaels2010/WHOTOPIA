@@ -209,7 +209,7 @@ describe('Whot Game Rules', () => {
       expect(engine.currentTurn).toBe(0);
     });
 
-    it('allows penalized player to defend with card 2 (stacking penalty)', () => {
+    it('allows penalized player to defend with card 2 (blocks penalty, no stacking)', () => {
       const engine = makeGame(['Alice', 'Bob'], 2);
       const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
       engine.playCard(p2, 0);
@@ -219,7 +219,7 @@ describe('Whot Game Rules', () => {
       expect(penaltyBefore).toBeGreaterThan(0);
       const result = engine.playCard(defenseCard, 1);
       expect(result.success).toBe(true);
-      expect(engine.drawPenalty).toBe(4);
+      expect(engine.drawPenalty).toBe(0);
       expect(engine.players[1].cardCount).toBe(beforeCount - 1);
     });
 
@@ -231,7 +231,7 @@ describe('Whot Game Rules', () => {
       expect(engine.canPlayCard(fiveCard, 1).valid).toBe(false);
     });
 
-    it('allows penalized player to defend with card 5 (stacking penalty)', () => {
+    it('allows penalized player to defend with card 5 (blocks penalty, no stacking)', () => {
       const engine = makeGame(['Alice', 'Bob'], 2);
       const p5 = addCardToHand(engine, 0, 5, engine.currentSymbol);
       engine.playCard(p5, 0);
@@ -240,7 +240,7 @@ describe('Whot Game Rules', () => {
       expect(engine.drawPenalty).toBeGreaterThan(0);
       const result = engine.playCard(defenseCard, 1);
       expect(result.success).toBe(true);
-      expect(engine.drawPenalty).toBe(6);
+      expect(engine.drawPenalty).toBe(0);
       expect(engine.players[1].cardCount).toBe(beforeCount - 1);
     });
 

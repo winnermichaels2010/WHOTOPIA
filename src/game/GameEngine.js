@@ -43,7 +43,7 @@ class GameEngine {
     });
 
     let firstCard = this.deck.drawCard();
-    while (firstCard && firstCard.isSpecial && firstCard.specialType !== 'whot') {
+    while (firstCard && firstCard.isSpecial) {
       this.deck.cards.unshift(firstCard);
       this.deck.shuffle();
       firstCard = this.deck.drawCard();
@@ -136,11 +136,10 @@ class GameEngine {
 
     let effects;
     if (isDefense) {
-      const added = this._penaltyValue(card);
-      this.drawPenalty += added;
-      this._pendingPenaltyValue = card.value;
-      effects = { holdOn: false, drawPenaltyAdded: added, suspension: false, generalMarket: false };
-      this.lastAction = `${player.name} defended with ${card.name}! Next player must draw ${this.drawPenalty}.`;
+      this.drawPenalty = 0;
+      this._pendingPenaltyValue = 0;
+      effects = { holdOn: false, drawPenaltyAdded: 0, suspension: false, generalMarket: false };
+      this.lastAction = `${player.name} defended with ${card.name}! Penalty blocked — next player continues.`;
     } else {
       effects = this.applySpecialEffects(card, playerId);
     }
@@ -360,16 +359,6 @@ class GameEngine {
     if (this._pendingPenaltyValue === 2) return this.rules.allowDefendPick2;
     if (this._pendingPenaltyValue === 5) return this.rules.allowDefendPick3;
     return false;
-  }
-
-  _penaltyValue(card) {
-    if (!card) return 0;
-    switch (card.specialType) {
-      case 'pick2': return 2;
-      case 'pick3': return 3;
-      case 'generalMarket': return 1;
-      default: return 0;
-    }
   }
 
   _formatLastAction(playerName, card, chosenSymbol) {

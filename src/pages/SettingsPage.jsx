@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { updateUserProfile } from '../firebase/services/firestoreService';
 import {
   FaCog,
   FaCheck,
   FaUndo,
-  FaTrashAlt,
-  FaExclamationTriangle,
   FaGamepad,
   FaLayerGroup,
   FaShieldAlt,
@@ -61,12 +58,9 @@ const SETTINGS_SECTIONS = [
 ];
 
 const SettingsPage = () => {
-  const { user, updateProfile, deleteAccount } = useAuthContext();
-  const navigate = useNavigate();
+  const { user, updateProfile } = useAuthContext();
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [saved, setSaved] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [activeSection, setActiveSection] = useState('profile');
   const [playerName, setPlayerName] = useState(user?.displayName || 'Player');
   const [playerNameSaved, setPlayerNameSaved] = useState(false);
@@ -103,16 +97,6 @@ const SettingsPage = () => {
     localStorage.setItem('whotopia_settings', JSON.stringify(settings));
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
-  };
-
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    const result = await deleteAccount();
-    if (result.success) {
-      navigate('/login');
-    }
-    setDeleting(false);
-    setShowDeleteConfirm(false);
   };
 
   const resetSettings = () => {
@@ -300,8 +284,8 @@ const SettingsPage = () => {
 
           <div className="setting-item">
             <div className="setting-info">
-              <h4>Stack Penalties</h4>
-              <p>Allow Pick 2 and Pick 3 cards to stack on top of each other</p>
+              <h4>Allow Defending Penalties</h4>
+              <p>Allow Pick 2 and Pick 3 cards to be defended by playing the same card (blocks the penalty)</p>
             </div>
             <div className="setting-control">
               <label className="toggle-switch">
@@ -621,45 +605,6 @@ const SettingsPage = () => {
         <button className="settings-btn secondary" onClick={resetSettings}>
           <FaUndo /> Reset to Defaults
         </button>
-      </div>
-
-      <div className="settings-divider-large" />
-
-      <div className="settings-danger-zone">
-        <div className="danger-zone-header">
-          <FaExclamationTriangle className="danger-icon" />
-          <h2>Danger Zone</h2>
-        </div>
-        <p>Once you delete your account, there is no going back. All your data will be permanently removed.</p>
-
-        {!showDeleteConfirm ? (
-          <button
-            className="settings-btn danger"
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            <FaTrashAlt /> Delete My Account
-          </button>
-        ) : (
-          <div className="delete-confirm">
-            <p className="delete-warning">Are you absolutely sure? This action cannot be undone.</p>
-            <div className="delete-actions">
-              <button
-                className="settings-btn danger"
-                onClick={handleDeleteAccount}
-                disabled={deleting}
-              >
-                {deleting ? 'Deleting...' : 'Yes, Delete My Account'}
-              </button>
-              <button
-                className="settings-btn secondary"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleting}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

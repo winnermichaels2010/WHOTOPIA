@@ -131,6 +131,25 @@
   margin-bottom: var(--sp-4);
 }
 
+.review-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-4);
+  background: hsla(0, 72%, 50%, 0.1);
+  border: 1px solid hsla(0, 72%, 50%, 0.4);
+  border-radius: var(--radius-sm);
+  color: #e5484d;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.review-error-banner svg {
+  flex-shrink: 0;
+}
+
 .review-field label {
   display: block;
   font-size: 0.8125rem;

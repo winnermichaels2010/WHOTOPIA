@@ -116,14 +116,15 @@ const MATCH_HISTORY_COLLECTION = 'matchHistory';
  * @returns {Promise<DocumentReference>} Match document reference
  */
 export const recordMatch = async (matchData) => {
+  // Update player stats first so counts are recorded even if the
+  // match-history write fails
+  await updatePlayerStats(matchData.players, matchData.winner);
+
   const matchRef = await addDoc(collection(firestore, MATCH_HISTORY_COLLECTION), {
     ...matchData,
     timestamp: serverTimestamp()
   });
-  
-  // Update player stats
-  await updatePlayerStats(matchData.players, matchData.winner);
-  
+
   return matchRef;
 };
 
@@ -327,10 +328,9 @@ export const addReview = async (reviewData) => {
  * @param {number} limitCount - Maximum number of reviews to retrieve
  * @returns {Promise<QuerySnapshot>} Reviews snapshot
  */
-export const getAllReviews = async (limitCount = 100) => {
+export const getAllReviews = async (limitCount = 200) => {
   const q = query(
     collection(firestore, REVIEWS_COLLECTION),
-    orderBy('timestamp', 'desc'),
     limit(limitCount)
   );
   const querySnapshot = await getDocs(q);
@@ -343,10 +343,7 @@ export const getAllReviews = async (limitCount = 100) => {
  * @returns {Function} Unsubscribe function
  */
 export const onReviewsChange = (callback) => {
-  const q = query(
-    collection(firestore, REVIEWS_COLLECTION),
-    orderBy('timestamp', 'desc')
-  );
+  const q = query(collection(firestore, REVIEWS_COLLECTION));
   return onSnapshot(q, callback);
 };
 

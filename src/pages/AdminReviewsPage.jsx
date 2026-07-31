@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
-import { onReviewsChange } from '../firebase/services/firestoreService';
+import { onReviewsChange, getAllReviews } from '../firebase/services/firestoreService';
 import {
   FaStar,
   FaComments,
@@ -10,6 +10,8 @@ import {
   FaSpinner,
   FaEye,
   FaSignOutAlt,
+  FaSyncAlt,
+  FaExclamationCircle,
 } from 'react-icons/fa';
 import './AdminReviewsPage.css';
 
@@ -28,22 +30,62 @@ const formatReviewTime = (timestamp) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+const sortReviews = (docs) => [...docs].sort((a, b) => {
+  const ta = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : (a.timestamp ? new Date(a.timestamp).getTime() : 0);
+  const tb = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : (b.timestamp ? new Date(b.timestamp).getTime() : 0);
+  return tb - ta;
+});
+
 const AdminReviewsPage = () => {
   const { logout } = useAuthContext();
   const navigate = useNavigate();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const unsubscribe = onReviewsChange((snapshot) => {
+  const fetchReviews = async () => {
+    setRefreshing(true);
+    setError('');
+    try {
+      const snapshot = await getAllReviews();
       const reviewsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      setReviews(reviewsData);
+      setReviews(sortReviews(reviewsData));
+    } catch (err) {
+      console.error('Failed to fetch reviews:', err);
+      setError(err?.message || 'Failed to load reviews.');
+    }
+    setLoading(false);
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    let unsubscribe;
+    try {
+      unsubscribe = onReviewsChange((snapshot) => {
+        const reviewsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setReviews(sortReviews(reviewsData));
+        setLoading(false);
+        setError('');
+      }, (err) => {
+        console.error('Review listener error:', err);
+        setError(err?.message || 'Lost connection to reviews. Click refresh to reload.');
+        setLoading(false);
+      });
+    } catch (err) {
+      console.error('Failed to subscribe to reviews:', err);
+      setError(err?.message || 'Failed to load reviews.');
       setLoading(false);
-    });
-    return () => unsubscribe();
+    }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const getInitial = (name) => {
@@ -109,7 +151,23 @@ const AdminReviewsPage = () => {
       <section className="admin-reviews-list-section">
         <div className="admin-reviews-list-header">
           <h2>All Player Reviews</h2>
+          <button
+            className="admin-reviews-refresh-btn"
+            onClick={fetchReviews}
+            disabled={refreshing}
+            title="Refresh reviews"
+          >
+            <FaSyncAlt className={refreshing ? 'spin' : ''} />
+            <span>Refresh</span>
+          </button>
         </div>
+
+        {error && (
+          <div className="admin-reviews-error">
+            <FaExclamationCircle />
+            <span>{error}</span>
+          </div>
+        )}
 
         {loading ? (
           <div className="admin-reviews-loading">

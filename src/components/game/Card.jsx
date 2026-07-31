@@ -37,22 +37,22 @@ const Card = ({ card, onClick, selected, disabled, small }) => {
     >
       <div className="card-face" style={{ borderColor: symbolColor }}>
         <div className="card-corner top-left">
-          <span className="card-value">{card.value === 20 ? 'W' : card.value}</span>
-          <span className="card-symbol-mini">{card.symbolDisplay}</span>
+          <span className="card-value">{card.value}</span>
+          {!isWhot && <span className="card-symbol-mini">{card.symbolDisplay}</span>}
         </div>
         <div className="card-center">
           <span className="card-main-symbol" style={{ color: symbolColor }}>
-            {card.symbolDisplay}
+            {isWhot ? card.value : card.symbolDisplay}
           </span>
-          {card.isSpecial && (
+          {card.isSpecial && card.specialType !== 'whot' && (
             <span className="card-effect">
               {SPECIAL_LABELS[card.specialType] || ''}
             </span>
           )}
         </div>
         <div className="card-corner bottom-right">
-          <span className="card-value">{card.value === 20 ? 'W' : card.value}</span>
-          <span className="card-symbol-mini">{card.symbolDisplay}</span>
+          <span className="card-value">{card.value}</span>
+          {!isWhot && <span className="card-symbol-mini">{card.symbolDisplay}</span>}
         </div>
       </div>
     </div>

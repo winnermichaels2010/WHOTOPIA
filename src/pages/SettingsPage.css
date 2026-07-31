@@ -2,6 +2,7 @@
   padding: var(--sp-8) var(--sp-10);
   max-width: 720px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .settings-header {
@@ -544,6 +545,10 @@
     padding: var(--sp-2) var(--sp-4);
     border-radius: var(--radius-md);
     margin-bottom: var(--sp-5);
+  }
+
+  .profile-avatar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
 
   .settings-card:hover {

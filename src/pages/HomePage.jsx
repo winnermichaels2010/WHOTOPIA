@@ -115,27 +115,41 @@ const HomePage = () => {
       </section>
 
       {/* Stats Cards */}
-      <section className="dash-stats-grid">
-        <div className="dash-stat-card dash-stat-card--games">
-          <div className="dash-stat-card-icon">
-            <FaGamepad />
-          </div>
-          <div className="dash-stat-card-info">
-            <span className="dash-stat-card-value">{totalMatches}</span>
-            <span className="dash-stat-card-label">Games Played</span>
-          </div>
-          <div className="dash-stat-card-decoration" />
+      <section className="dash-stats-section">
+        <div className="dash-section-header">
+          <h2>Your Stats</h2>
+          {(totalMatches > 0 || totalWins > 0) && (
+            <button
+              className="dash-clear-btn"
+              onClick={() => setShowClearConfirm(true)}
+              title="Clear stats"
+            >
+              <FaTrashAlt />
+            </button>
+          )}
         </div>
+        <div className="dash-stats-grid">
+          <div className="dash-stat-card dash-stat-card--games">
+            <div className="dash-stat-card-icon">
+              <FaGamepad />
+            </div>
+            <div className="dash-stat-card-info">
+              <span className="dash-stat-card-value">{totalMatches}</span>
+              <span className="dash-stat-card-label">Games Played</span>
+            </div>
+            <div className="dash-stat-card-decoration" />
+          </div>
 
-        <div className="dash-stat-card dash-stat-card--wins">
-          <div className="dash-stat-card-icon">
-            <FaTrophy />
+          <div className="dash-stat-card dash-stat-card--wins">
+            <div className="dash-stat-card-icon">
+              <FaTrophy />
+            </div>
+            <div className="dash-stat-card-info">
+              <span className="dash-stat-card-value">{totalWins}</span>
+              <span className="dash-stat-card-label">Total Wins</span>
+            </div>
+            <div className="dash-stat-card-decoration" />
           </div>
-          <div className="dash-stat-card-info">
-            <span className="dash-stat-card-value">{totalWins}</span>
-            <span className="dash-stat-card-label">Total Wins</span>
-          </div>
-          <div className="dash-stat-card-decoration" />
         </div>
       </section>
 

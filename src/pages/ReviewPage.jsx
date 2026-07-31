@@ -7,6 +7,7 @@ import {
   FaComments,
   FaCheck,
   FaSpinner,
+  FaExclamationCircle,
 } from 'react-icons/fa';
 import './ReviewPage.css';
 
@@ -16,12 +17,14 @@ const ReviewPage = () => {
   const [suggestion, setSuggestion] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!review.trim()) return;
 
     setSubmitting(true);
+    setSubmitError('');
     try {
       await addReview({
         userId: user.uid,
@@ -36,6 +39,7 @@ const ReviewPage = () => {
       setTimeout(() => setSubmitted(false), 3000);
     } catch (error) {
       console.error('Failed to submit review:', error);
+      setSubmitError(error?.message || 'Failed to submit your review. Please try again.');
     }
     setSubmitting(false);
   };
@@ -65,6 +69,12 @@ const ReviewPage = () => {
             <h2>Write a Review</h2>
           </div>
           <form onSubmit={handleSubmit}>
+            {submitError && (
+              <div className="review-error-banner">
+                <FaExclamationCircle />
+                <span>{submitError}</span>
+              </div>
+            )}
             <div className="review-field">
               <label htmlFor="review-input">Your Review</label>
               <textarea
@@ -106,7 +116,7 @@ const ReviewPage = () => {
               ) : (
                 <>
                   <FaPaperPlane />
-                  Post Review
+                  Review
                 </>
               )}
             </button>
