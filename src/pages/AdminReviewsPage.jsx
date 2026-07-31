@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
-import { onReviewsChange, getAllReviews } from '../firebase/services/firestoreService';
+import { useTheme } from '../context/ThemeContext';
+import { onReviewsChange, getAllReviews, deleteReview, clearAllReviews } from '../firebase/services/firestoreService';
 import {
   FaStar,
   FaComments,
@@ -12,6 +13,10 @@ import {
   FaSignOutAlt,
   FaSyncAlt,
   FaExclamationCircle,
+  FaMoon,
+  FaSun,
+  FaTrashAlt,
+  FaTrash,
 } from 'react-icons/fa';
 import './AdminReviewsPage.css';
 
@@ -38,11 +43,15 @@ const sortReviews = (docs) => [...docs].sort((a, b) => {
 
 const AdminReviewsPage = () => {
   const { logout } = useAuthContext();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
+  const [confirmingClearAll, setConfirmingClearAll] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchReviews = async () => {
     setRefreshing(true);
@@ -98,6 +107,37 @@ const AdminReviewsPage = () => {
     navigate('/login');
   };
 
+  const handleDeleteReview = async () => {
+    if (!reviewToDelete) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await deleteReview(reviewToDelete.id);
+      setReviews((prev) => prev.filter((r) => r.id !== reviewToDelete.id));
+      setReviewToDelete(null);
+    } catch (err) {
+      console.error('Failed to delete review:', err);
+      setError(err?.message || 'Failed to delete review.');
+      setReviewToDelete(null);
+    }
+    setDeleting(false);
+  };
+
+  const handleClearAll = async () => {
+    setDeleting(true);
+    setError('');
+    try {
+      await clearAllReviews();
+      setReviews([]);
+      setConfirmingClearAll(false);
+    } catch (err) {
+      console.error('Failed to clear reviews:', err);
+      setError(err?.message || 'Failed to clear all reviews.');
+      setConfirmingClearAll(false);
+    }
+    setDeleting(false);
+  };
+
   return (
     <div className="admin-reviews-page">
       {/* Sticky Top Bar */}
@@ -106,10 +146,19 @@ const AdminReviewsPage = () => {
           <FaEye className="admin-reviews-topbar-icon" />
           <span className="admin-reviews-topbar-title">Player Reviews</span>
         </div>
-        <button className="admin-reviews-topbar-logout" onClick={handleSignOut}>
-          <FaSignOutAlt />
-          <span>Sign Out</span>
-        </button>
+        <div className="admin-reviews-topbar-actions">
+          <button
+            className="admin-reviews-theme-toggle"
+            onClick={toggleTheme}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <FaSun /> : <FaMoon />}
+          </button>
+          <button className="admin-reviews-topbar-logout" onClick={handleSignOut}>
+            <FaSignOutAlt />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </nav>
 
       {/* Header */}
@@ -151,15 +200,28 @@ const AdminReviewsPage = () => {
       <section className="admin-reviews-list-section">
         <div className="admin-reviews-list-header">
           <h2>All Player Reviews</h2>
-          <button
-            className="admin-reviews-refresh-btn"
-            onClick={fetchReviews}
-            disabled={refreshing}
-            title="Refresh reviews"
-          >
-            <FaSyncAlt className={refreshing ? 'spin' : ''} />
-            <span>Refresh</span>
-          </button>
+          <div className="admin-reviews-list-actions">
+            {reviews.length > 0 && (
+              <button
+                className="admin-reviews-clear-btn"
+                onClick={() => setConfirmingClearAll(true)}
+                disabled={deleting}
+                title="Delete all reviews"
+              >
+                <FaTrash />
+                <span>Clear All</span>
+              </button>
+            )}
+            <button
+              className="admin-reviews-refresh-btn"
+              onClick={fetchReviews}
+              disabled={refreshing}
+              title="Refresh reviews"
+            >
+              <FaSyncAlt className={refreshing ? 'spin' : ''} />
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -198,6 +260,13 @@ const AdminReviewsPage = () => {
                     <FaClock />
                     {formatReviewTime(item.timestamp)}
                   </span>
+                  <button
+                    className="admin-review-card-delete"
+                    onClick={() => setReviewToDelete(item)}
+                    title="Delete this review"
+                  >
+                    <FaTrashAlt />
+                  </button>
                 </div>
                 <div className="admin-review-card-body">
                   <div className="admin-review-card-section">
@@ -216,6 +285,69 @@ const AdminReviewsPage = () => {
           </div>
         )}
       </section>
+
+      {reviewToDelete && (
+        <div className="admin-review-modal-overlay" onClick={() => !deleting && setReviewToDelete(null)}>
+          <div className="admin-review-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-review-modal-icon">
+              <FaTrashAlt />
+            </div>
+            <h3>Delete Review</h3>
+            <p>
+              Are you sure you want to delete this review by{' '}
+              <strong>{reviewToDelete.displayName}</strong>? This action cannot be undone.
+            </p>
+            <div className="admin-review-modal-actions">
+              <button
+                className="admin-review-modal-btn cancel"
+                onClick={() => setReviewToDelete(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="admin-review-modal-btn confirm danger"
+                onClick={handleDeleteReview}
+                disabled={deleting}
+              >
+                {deleting ? <FaSpinner className="spin" /> : <FaTrashAlt />}
+                <span>{deleting ? 'Deleting...' : 'Delete'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmingClearAll && (
+        <div className="admin-review-modal-overlay" onClick={() => !deleting && setConfirmingClearAll(false)}>
+          <div className="admin-review-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-review-modal-icon">
+              <FaTrash />
+            </div>
+            <h3>Clear All Reviews</h3>
+            <p>
+              Are you sure you want to delete all {reviews.length} reviews? This action cannot be undone.
+            </p>
+            <div className="admin-review-modal-actions">
+              <button
+                className="admin-review-modal-btn cancel"
+                onClick={() => setConfirmingClearAll(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="admin-review-modal-btn confirm danger"
+                onClick={handleClearAll}
+                disabled={deleting}
+              >
+                {deleting ? <FaSpinner className="spin" /> : <FaTrash />}
+                <span>{deleting ? 'Clearing...' : 'Clear All'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

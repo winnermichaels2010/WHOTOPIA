@@ -39,7 +39,8 @@ import {
   limit,
   onSnapshot,
   serverTimestamp,
-  runTransaction
+  runTransaction,
+  writeBatch
 } from 'firebase/firestore';
 import { firestore } from '../index.js';
 
@@ -118,7 +119,7 @@ const MATCH_HISTORY_COLLECTION = 'matchHistory';
 export const recordMatch = async (matchData) => {
   // Update player stats first so counts are recorded even if the
   // match-history write fails
-  await updatePlayerStats(matchData.players, matchData.winner);
+  await updatePlayerStats(matchData.players, matchData.winner, matchData.gameMode);
 
   const matchRef = await addDoc(collection(firestore, MATCH_HISTORY_COLLECTION), {
     ...matchData,
@@ -149,9 +150,11 @@ export const getUserMatchHistory = async (userId, limitCount = 20) => {
  * Update player statistics after a match
  * @param {Array} players - Array of player IDs
  * @param {string} winner - ID of the winning player
+ * @param {string} [gameMode='ai'] - Game mode; only 'ai' games count toward stats
  * @returns {Promise<void>}
  */
-export const updatePlayerStats = async (players, winner) => {
+export const updatePlayerStats = async (players, winner, gameMode = 'ai') => {
+  if (gameMode && gameMode !== 'ai') return;
   for (const playerId of players) {
     const userRef = doc(firestore, USERS_COLLECTION, playerId);
     const isWinner = playerId === winner;
@@ -324,6 +327,17 @@ export const addReview = async (reviewData) => {
 };
 
 /**
+ * Check whether a user has already submitted a review
+ * @param {string} userId - User ID
+ * @returns {Promise<boolean>} True if the user has a review
+ */
+export const hasUserReviewed = async (userId) => {
+  const q = query(collection(firestore, REVIEWS_COLLECTION), where('userId', '==', userId));
+  const querySnapshot = await getDocs(q);
+  return !querySnapshot.empty;
+};
+
+/**
  * Get all reviews (for admin view)
  * @param {number} limitCount - Maximum number of reviews to retrieve
  * @returns {Promise<QuerySnapshot>} Reviews snapshot
@@ -354,6 +368,19 @@ export const onReviewsChange = (callback) => {
  */
 export const deleteReview = async (reviewId) => {
   await deleteDoc(doc(firestore, REVIEWS_COLLECTION, reviewId));
+};
+
+/**
+ * Delete all reviews
+ * @returns {Promise<void>}
+ */
+export const clearAllReviews = async () => {
+  const batch = writeBatch(firestore);
+  const snapshot = await getDocs(query(collection(firestore, REVIEWS_COLLECTION)));
+  snapshot.docs.forEach((d) => {
+    batch.delete(doc(firestore, REVIEWS_COLLECTION, d.id));
+  });
+  await batch.commit();
 };
 
 // ============ POSTED REVIEWS ============

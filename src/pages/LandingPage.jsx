@@ -11,7 +11,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { FaPlay, FaUsers, FaTrophy, FaGamepad, FaStar, FaArrowRight, FaCheckCircle, FaTwitter, FaInstagram, FaDiscord } from 'react-icons/fa';
+import { FaPlay, FaUsers, FaTrophy, FaGamepad, FaStar, FaArrowRight, FaCheckCircle } from 'react-icons/fa';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -309,11 +309,6 @@ const LandingPage = () => {
               <p className="footer-description">
                 The modern way to play the classic Nigerian Whot card game online.
               </p>
-              <div className="social-links">
-                <a href="#" className="social-link"><FaTwitter /></a>
-                <a href="#" className="social-link"><FaInstagram /></a>
-                <a href="#" className="social-link"><FaDiscord /></a>
-              </div>
             </div>
             <div className="footer-section">
               <h3 className="footer-title">Quick Links</h3>

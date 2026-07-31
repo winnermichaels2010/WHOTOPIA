@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuthContext } from '../context/AuthContext';
+import { hasLocalReview, REVIEW_SUBMITTED_EVENT } from '../utils/reviewStatus';
 import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe, FaBook, FaFileContract, FaCog, FaUsers, FaStar } from 'react-icons/fa';
 import './Sidebar.css';
 
@@ -27,12 +28,24 @@ const Sidebar = ({ children }) => {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const { user, logout } = useAuthContext();
+  const [hasReviewed, setHasReviewed] = useState(() => hasLocalReview(user?.uid));
+
+  useEffect(() => {
+    setHasReviewed(hasLocalReview(user?.uid));
+  }, [user, location.pathname]);
+
+  useEffect(() => {
+    const onReviewSubmitted = () => setHasReviewed(true);
+    window.addEventListener(REVIEW_SUBMITTED_EVENT, onReviewSubmitted);
+    return () => window.removeEventListener(REVIEW_SUBMITTED_EVENT, onReviewSubmitted);
+  }, []);
 
   const isAdmin = user?.email === 'review@gmail.com';
 
   const navItems = allNavItems.filter(item => {
     if (item.path === '/' && user) return false;
     if (!user && ['/dashboard', '/settings', '/play', '/players', '/review'].includes(item.path)) return false;
+    if (item.path === '/review' && user && !isAdmin && hasReviewed) return false;
     return true;
   }).map(item => {
     if (item.path === '/review' && isAdmin) {
