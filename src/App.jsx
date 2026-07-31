@@ -11,6 +11,8 @@ import HowToPlayPage from './pages/HowToPlayPage';
 import TermsPage from './pages/TermsPage';
 import SettingsPage from './pages/SettingsPage';
 import PlayersPage from './pages/PlayersPage';
+import ReviewPage from './pages/ReviewPage';
+import AdminReviewsPage from './pages/AdminReviewsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
 import './App.css';
@@ -35,6 +37,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <GamePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-reviews"
+              element={
+                <ProtectedRoute>
+                  <AdminReviewsPage />
                 </ProtectedRoute>
               }
             />
@@ -81,6 +91,14 @@ function App() {
                         element={
                           <ProtectedRoute>
                             <PlayersPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/review"
+                        element={
+                          <ProtectedRoute>
+                            <ReviewPage />
                           </ProtectedRoute>
                         }
                       />

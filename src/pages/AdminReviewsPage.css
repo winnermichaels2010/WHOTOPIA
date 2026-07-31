@@ -1,0 +1,607 @@
+/* ========================================
+   Admin Reviews Page — review@gmail.com
+   ======================================== */
+
+.admin-reviews-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* ----------------------------------------
+   Sticky Top Bar
+   ---------------------------------------- */
+
+.admin-reviews-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-8);
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.admin-reviews-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.admin-reviews-topbar-icon {
+  color: var(--accent-red);
+  font-size: 1rem;
+}
+
+.admin-reviews-topbar-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admin-reviews-topbar-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-reviews-topbar-logout:hover {
+  color: #dc2626;
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.admin-reviews-topbar-logout:active {
+  transform: scale(0.97);
+}
+
+.admin-reviews-topbar-logout svg {
+  font-size: 0.75rem;
+}
+
+/* ----------------------------------------
+   Page Content
+   ---------------------------------------- */
+
+.admin-reviews-content {
+  padding: var(--sp-8);
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: var(--sp-16);
+}
+
+/* ----------------------------------------
+   Hero
+   ---------------------------------------- */
+
+.admin-reviews-hero {
+  position: relative;
+  margin: var(--sp-8) auto var(--sp-6);
+  max-width: 900px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: linear-gradient(135deg, hsl(235, 60%, 45%), hsl(280, 60%, 40%));
+  padding: var(--sp-8) var(--sp-6);
+  text-align: center;
+}
+
+.admin-reviews-hero-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.admin-reviews-hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-reviews-hero-orb-1 {
+  width: var(--sp-16);
+  height: var(--sp-16);
+  top: -48px;
+  right: -24px;
+  animation: adminReviewsOrbFloat 8s ease-in-out infinite;
+}
+
+.admin-reviews-hero-orb-2 {
+  width: 80px;
+  height: 80px;
+  bottom: -32px;
+  left: 10%;
+  animation: adminReviewsOrbFloat 6s 1s ease-in-out infinite reverse;
+}
+
+@keyframes adminReviewsOrbFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-16px) scale(1.08); }
+}
+
+.admin-reviews-hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-reviews-hero-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--sp-3);
+  font-size: 1.375rem;
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+}
+
+.admin-reviews-hero-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin-bottom: var(--sp-2);
+}
+
+.admin-reviews-hero-content p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9375rem;
+}
+
+/* ----------------------------------------
+   Stats
+   ---------------------------------------- */
+
+.admin-reviews-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin: 0 auto var(--sp-6);
+  max-width: 900px;
+  padding: 0 var(--sp-8);
+}
+
+.admin-reviews-stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.admin-reviews-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  background: var(--accent-gradient-soft);
+  color: var(--accent-red);
+  flex-shrink: 0;
+}
+
+.admin-reviews-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-reviews-stat-value {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.admin-reviews-stat-label {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ----------------------------------------
+   Reviews List
+   ---------------------------------------- */
+
+.admin-reviews-list-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 var(--sp-8) var(--sp-16);
+}
+
+.admin-reviews-list-header {
+  margin-bottom: var(--sp-3);
+}
+
+.admin-reviews-list-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-reviews-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-10);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.admin-reviews-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-10) var(--sp-5);
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.admin-reviews-empty-icon {
+  font-size: 2rem;
+  color: var(--text-muted);
+  opacity: 0.4;
+  margin-bottom: var(--sp-3);
+}
+
+.admin-reviews-empty p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.admin-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.admin-review-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4);
+  transition: box-shadow 0.15s ease;
+}
+
+.admin-review-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-review-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.admin-review-card-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--accent-gradient-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-review-card-avatar span {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent-red);
+}
+
+.admin-review-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-review-card-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-review-card-email {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.admin-review-card-email svg {
+  font-size: 0.55rem;
+}
+
+.admin-review-card-time {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.admin-review-card-time svg {
+  font-size: 0.6rem;
+}
+
+.admin-review-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.admin-review-card-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--sp-3);
+}
+
+.admin-review-section-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: var(--sp-1);
+}
+
+.admin-review-suggestion {
+  border-color: hsla(330, 80%, 55%, 0.2);
+}
+
+.admin-review-suggestion .admin-review-section-label {
+  color: var(--accent-coral);
+}
+
+.admin-review-card-text {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* ----------------------------------------
+   Post Button
+   ---------------------------------------- */
+
+.admin-review-card-actions {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-color);
+}
+
+.admin-review-post-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: var(--accent-gradient);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: var(--shadow-glow);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.admin-review-post-btn:hover {
+  box-shadow: 0 6px 24px hsla(4, 78%, 56%, 0.3);
+  transform: translateY(-1px);
+}
+
+.admin-review-post-btn:active {
+  transform: scale(0.97);
+  transition-duration: 0.08s;
+}
+
+.admin-review-post-btn svg {
+  font-size: 0.75rem;
+}
+
+/* ----------------------------------------
+   Confirmation Modal
+   ---------------------------------------- */
+
+.admin-review-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: hsla(230, 25%, 12%, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: var(--sp-4);
+  animation: adminReviewFadeIn 0.2s ease;
+}
+
+@keyframes adminReviewFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.admin-review-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: var(--sp-6);
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  animation: adminReviewModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-xl);
+}
+
+@keyframes adminReviewModalPop {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.admin-review-modal-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(230, 57, 70, 0.08);
+  color: var(--accent-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin: 0 auto var(--sp-3);
+}
+
+.admin-review-modal h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--sp-2);
+}
+
+.admin-review-modal p {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--sp-5);
+}
+
+.admin-review-modal-actions {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.admin-review-modal-btn {
+  flex: 1;
+  padding: var(--sp-2) var(--sp-4);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+
+.admin-review-modal-btn:active {
+  transform: scale(0.97);
+}
+
+.admin-review-modal-btn.confirm {
+  background: var(--accent-gradient);
+  color: white;
+  box-shadow: var(--shadow-glow);
+}
+
+.admin-review-modal-btn.confirm:hover:not(:disabled) {
+  box-shadow: 0 4px 16px hsla(4, 78%, 56%, 0.3);
+}
+
+.admin-review-modal-btn.confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-review-modal-btn.cancel {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.admin-review-modal-btn.cancel:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+/* ----------------------------------------
+   Spin animation
+   ---------------------------------------- */
+
+@keyframes adminReviewsSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.admin-reviews-page .spin {
+  animation: adminReviewsSpin 1s linear infinite;
+}
+
+/* ----------------------------------------
+   Responsive — Mobile
+   ---------------------------------------- */
+
+@media (max-width: 640px) {
+  .admin-reviews-topbar {
+    padding: var(--sp-3) var(--sp-4);
+  }
+
+  .admin-reviews-hero {
+    margin: var(--sp-4) var(--sp-4) var(--sp-4);
+    padding: var(--sp-6) var(--sp-5);
+    border-radius: var(--radius-lg);
+  }
+
+  .admin-reviews-stats {
+    padding: 0 var(--sp-4);
+  }
+
+  .admin-reviews-list-section {
+    padding: 0 var(--sp-4) var(--sp-10);
+  }
+
+  .admin-reviews-hero-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .admin-review-card-header {
+    flex-wrap: wrap;
+  }
+
+  .admin-review-card-time {
+    width: 100%;
+    margin-top: var(--sp-1);
+    padding-left: calc(36px + var(--sp-3));
+  }
+}

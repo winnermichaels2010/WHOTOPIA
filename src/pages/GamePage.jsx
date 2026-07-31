@@ -6,8 +6,8 @@ import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
 import CardAnimationLayer from '../components/game/CardAnimationLayer';
-import { onGameStateChange, setGameState, getGameState, getGameRoom, onRoomPlayersChange, removePlayerFromRoom, realtimeDB } from '../firebase/services/realtimeDBService.js';
-import { ref, remove, onDisconnect } from 'firebase/database';
+import { onGameStateChange, setGameState, getGameState, getGameRoom, onRoomPlayersChange, realtimeDB } from '../firebase/services/realtimeDBService.js';
+import { ref, onDisconnect } from 'firebase/database';
 import { recordMatch } from '../firebase/services/firestoreService.js';
 import ChatAside from '../components/ChatAside';
 import { FaArrowLeft, FaRedo, FaRobot, FaSpinner, FaTrophy, FaMeh } from 'react-icons/fa';
@@ -129,14 +129,15 @@ const GamePage = () => {
       }
       updateGameState();
     }
-  }, [isOnline, roomId]);
+  }, [isOnline, roomId, updateGameState]);
 
   const startGame = (diff) => {
     const engine = new GameEngine();
     gameRef.current = engine;
 
     const playerName = mode === 'ai' ? 'You' : 'Player 1';
-    const aiName = mode === 'ai' ? 'Computer' : 'Player 2';
+    const storedSettings = JSON.parse(localStorage.getItem('whotopia_settings') || '{}');
+    const aiName = mode === 'ai' ? (storedSettings.botName || 'Computer') : 'Player 2';
 
     engine.initGame([playerName, aiName], 5);
     if (mode === 'ai') {
@@ -520,7 +521,7 @@ const GamePage = () => {
       duration: 0,
       scores: {}
     }).catch(() => {});
-  }, [gameState?.gameStatus, isOnline, myPlayerIndex, user]);
+  }, [gameState?.gameStatus, gameState?.winner, isOnline, myPlayerIndex, user]);
 
   useEffect(() => {
     if (!isOnline || !roomId) return;
@@ -617,7 +618,7 @@ const GamePage = () => {
         dbUnsubRef.current = null;
       }
     };
-  }, [isOnline, roomId, isHost, updateGameState]);
+  }, [isOnline, roomId, isHost, updateGameState, syncStateToDB]);
 
   useEffect(() => {
     const onOffline = () => setIsOffline(true);
@@ -674,11 +675,8 @@ const GamePage = () => {
     const myId = user?.uid || 'guest';
     const playerRef = ref(realtimeDB, `gameRooms/${roomId}/players/${myId}`);
     onDisconnect(playerRef).remove();
-    const countRef = ref(realtimeDB, `gameRooms/${roomId}/currentPlayers`);
-    onDisconnect(countRef).transaction((current) => Math.max(0, (current || 0) - 1));
     return () => {
       onDisconnect(playerRef).cancel();
-      onDisconnect(countRef).cancel();
     };
   }, [isOnline, roomId, user]);
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuthContext } from '../context/AuthContext';
-import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe, FaBook, FaFileContract, FaCog, FaUsers } from 'react-icons/fa';
+import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe, FaBook, FaFileContract, FaCog, FaUsers, FaStar } from 'react-icons/fa';
 import './Sidebar.css';
 
 const allNavItems = [
@@ -15,6 +15,7 @@ const allNavItems = [
   ]},
   { path: '/how-to-play', icon: <FaBook />, label: 'How to Play' },
   { path: '/settings', icon: <FaCog />, label: 'Settings' },
+  { path: '/review', icon: <FaStar />, label: 'Review' },
   { path: '/terms', icon: <FaFileContract />, label: 'Terms & Conditions' },
 ];
 
@@ -27,10 +28,17 @@ const Sidebar = ({ children }) => {
   const { isDark, toggleTheme } = useTheme();
   const { user, logout } = useAuthContext();
 
+  const isAdmin = user?.email === 'review@gmail.com';
+
   const navItems = allNavItems.filter(item => {
     if (item.path === '/' && user) return false;
-    if (!user && ['/dashboard', '/settings', '/play', '/players'].includes(item.path)) return false;
+    if (!user && ['/dashboard', '/settings', '/play', '/players', '/review'].includes(item.path)) return false;
     return true;
+  }).map(item => {
+    if (item.path === '/review' && isAdmin) {
+      return { ...item, path: '/admin-reviews', label: 'Reviews' };
+    }
+    return item;
   });
 
   const handleNav = (path) => {

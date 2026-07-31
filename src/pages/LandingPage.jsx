@@ -324,25 +324,7 @@ const LandingPage = () => {
                 <li><a href="#" onClick={handleGetStarted}>Get Started</a></li>
               </ul>
             </div>
-            <div className="footer-section">
-              <h3 className="footer-title">Support</h3>
-              <ul className="footer-links">
-                <li><a href="#">Help Center</a></li>
-                <li><a href="#">Contact Us</a></li>
-                <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">Terms of Service</a></li>
-              </ul>
-            </div>
-            <div className="footer-section">
-              <h3 className="footer-title">Newsletter</h3>
-              <p className="footer-description">
-                Stay updated with new features and game updates.
-              </p>
-              <div className="newsletter-form">
-                <input type="email" placeholder="Enter your email" className="newsletter-input" />
-                <button className="newsletter-button">Subscribe</button>
-              </div>
-            </div>
+
           </div>
           <div className="footer-bottom">
             <p>&copy; 2026 Whotopia. All rights reserved.</p>

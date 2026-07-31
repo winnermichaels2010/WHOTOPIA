@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
+  gap: var(--sp-6);
   background: var(--auth-bg);
 }
 
@@ -23,24 +23,15 @@
   stroke: var(--accent-red);
   stroke-dasharray: 65;
   stroke-dashoffset: 65;
+  stroke-linecap: round;
   animation: drawStroke 1.2s ease-in-out infinite;
+  will-change: stroke-dashoffset, opacity;
 }
 
-.w-stroke-1 {
-  animation-delay: 0s;
-}
-
-.w-stroke-2 {
-  animation-delay: 0.3s;
-}
-
-.w-stroke-3 {
-  animation-delay: 0.6s;
-}
-
-.w-stroke-4 {
-  animation-delay: 0.9s;
-}
+.w-stroke-1 { animation-delay: 0s; }
+.w-stroke-2 { animation-delay: 0.3s; }
+.w-stroke-3 { animation-delay: 0.6s; }
+.w-stroke-4 { animation-delay: 0.9s; }
 
 @keyframes drawStroke {
   0% {
@@ -65,8 +56,10 @@
 
 .loading-text {
   color: var(--text-secondary);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
   font-size: 0.95rem;
   font-weight: 500;
+  letter-spacing: 0.01em;
   animation: pulseText 1.5s ease-in-out infinite;
 }
 

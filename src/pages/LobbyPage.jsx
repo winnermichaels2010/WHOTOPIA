@@ -152,7 +152,7 @@ const LobbyPage = () => {
       setShowRulesPopup(true);
     } catch (err) {
       console.error('Failed to create room:', err);
-      setCreateError('Failed to create room. Check your connection and try again.');
+      setCreateError(`Failed to create room: ${err.message || 'Check your connection and try again.'}`);
     }
     setCreating(false);
   };
@@ -197,7 +197,7 @@ const LobbyPage = () => {
 
       startRoomListeners(code);
     } catch (err) {
-      setJoinError('Failed to join room. Try again.');
+      setJoinError(`Failed to join room: ${err.message || 'Try again.'}`);
       console.error('Join room error:', err);
     }
     setJoining(false);

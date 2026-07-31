@@ -33,7 +33,8 @@ const LoginForm = ({ onSwitchToRegister, onSwitchToForgotPassword }) => {
     const result = await signIn(email, password);
     
     if (result.success) {
-      navigate('/dashboard');
+      const isAdmin = email === 'review@gmail.com';
+      navigate(isAdmin ? '/admin-reviews' : '/dashboard');
     } else {
       setError(result.error);
       setIsSubmitting(false);
@@ -47,7 +48,8 @@ const LoginForm = ({ onSwitchToRegister, onSwitchToForgotPassword }) => {
     const result = await googleSignIn();
     
     if (result.success) {
-      navigate('/dashboard');
+      const isAdmin = result.user?.email === 'review@gmail.com';
+      navigate(isAdmin ? '/admin-reviews' : '/dashboard');
     } else {
       setError(result.error);
       setIsSubmitting(false);

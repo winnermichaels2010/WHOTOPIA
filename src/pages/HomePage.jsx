@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { useUserProfile, useMatchHistory } from '../firebase/hooks';
+import { onReviewsChange } from '../firebase/services/firestoreService';
 import {
   FaRobot,
   FaGlobe,
@@ -21,6 +22,7 @@ import {
   FaCheck,
   FaUsers,
   FaBookOpen,
+  FaQuoteLeft,
 } from 'react-icons/fa';
 import './HomePage.css';
 
@@ -68,9 +70,21 @@ const HomePage = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [postedReviews, setPostedReviews] = useState([]);
 
   const { profile } = useUserProfile(user?.uid);
   const { matches, clearHistory } = useMatchHistory(user?.uid, 10);
+
+  useEffect(() => {
+    const unsubscribe = onReviewsChange((snapshot) => {
+      const reviewsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setPostedReviews(reviewsData);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const stats = profile?.stats || {};
   const totalMatches = stats.totalMatches || 0;
@@ -111,7 +125,11 @@ const HomePage = () => {
             </p>
           </div>
           <div className="dash-hero-avatar" title={displayName}>
-            <span>{initial}</span>
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt={displayName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <span>{initial}</span>
+            )}
           </div>
         </div>
       </section>
@@ -290,6 +308,50 @@ const HomePage = () => {
               <FaPlay />
               Start your first game
             </button>
+          </div>
+        )}
+      </section>
+
+      {/* What People Say */}
+      <section className="dash-reviews">
+        <div className="dash-section-header">
+          <h2>
+            <FaQuoteLeft className="dash-section-icon" />
+            What People Say
+          </h2>
+          {postedReviews.length > 0 && (
+            <span className="dash-section-badge">{postedReviews.length}</span>
+          )}
+        </div>
+        {postedReviews.length > 0 ? (
+          <div className="dash-reviews-list">
+            {postedReviews.map((item) => (
+              <div key={item.id} className="dash-review-card">
+                <div className="dash-review-card-header">
+                  <div className="dash-review-card-avatar">
+                    <span>{getInitial(item.displayName)}</span>
+                  </div>
+                  <div className="dash-review-card-meta">
+                    <span className="dash-review-card-name">{item.displayName}</span>
+                  </div>
+                </div>
+                <div className="dash-review-card-body">
+                  <FaQuoteLeft className="dash-review-quote-icon" />
+                  <p className="dash-review-card-text">{item.review}</p>
+                </div>
+                {item.suggestion && (
+                  <div className="dash-review-card-suggestion">
+                    <span className="dash-review-suggestion-label">Suggestion:</span>
+                    <p>{item.suggestion}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="dash-reviews-empty">
+            <FaQuoteLeft className="dash-reviews-empty-icon" />
+            <p>No posted reviews yet.</p>
           </div>
         )}
       </section>

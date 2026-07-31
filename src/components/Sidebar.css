@@ -1,43 +1,44 @@
-/* Sidebar Styles */
+/* Sidebar Styles — Refined Utility */
 
 .sidebar-layout {
   display: flex;
   min-height: 100vh;
 }
 
-/* Sidebar */
+/* ─── Sidebar Shell ─── */
 .sidebar {
   width: 260px;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  transition: width 0.25s ease, background 0.2s ease;
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
   z-index: 1001;
   overflow: hidden;
+  transition: width 0.2s ease, background 0.2s ease;
 }
 
 .sidebar-layout.collapsed .sidebar {
   width: 72px;
 }
 
-/* Sidebar Header */
+/* ─── Header ─── */
 .sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem;
+  padding: var(--sp-4) var(--sp-5);
   border-bottom: 1px solid var(--border-color);
+  min-height: 64px;
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--sp-3);
   overflow: hidden;
 }
 
@@ -45,47 +46,61 @@
   font-size: 1.75rem;
   color: var(--accent-red);
   flex-shrink: 0;
+  width: 28px;
+  display: flex;
+  justify-content: center;
 }
 
 .logo-text {
-  font-size: 1.35rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.375rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
   background: var(--accent-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .sidebar-collapse-btn {
   background: none;
   border: none;
-  color: var(--text-secondary);
-  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0.35rem;
-  border-radius: 0.5rem;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.15s ease, background 0.15s ease;
   flex-shrink: 0;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
 .sidebar-collapse-btn:hover {
-  color: var(--accent-red);
+  color: var(--text-primary);
   background: var(--hover-bg);
 }
 
-/* Navigation */
+.sidebar-collapse-btn:active {
+  transform: scale(0.92);
+}
+
+/* ─── Navigation ─── */
 .sidebar-nav {
   flex: 1;
-  padding: 0.75rem;
+  padding: var(--sp-3);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--sp-1);
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 .nav-item-group {
@@ -95,7 +110,7 @@
 
 .nav-arrow {
   margin-left: auto;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   transition: transform 0.2s ease;
 }
 
@@ -106,37 +121,40 @@
 .nav-submenu {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  padding-left: 2.5rem;
-  margin-top: 0.15rem;
+  gap: 2px;
+  padding-left: 44px;
+  margin-top: 2px;
 }
 
 .nav-item.sub-item {
-  padding: 0.55rem 1rem;
-  font-size: 0.85rem;
+  padding: var(--sp-2) var(--sp-4);
+  font-size: 0.825rem;
 }
 
 .nav-item.sub-item .nav-icon {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
+/* ─── Nav Item ─── */
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  gap: var(--sp-3);
+  padding: 10px 12px;
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  border-radius: 0.75rem;
-  transition: color 0.15s ease, background 0.15s ease;
+  border-radius: var(--radius-sm);
   width: 100%;
   text-align: left;
   white-space: nowrap;
   position: relative;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .nav-item:hover {
@@ -148,6 +166,7 @@
   transform: scale(0.98);
 }
 
+/* ─── Active Nav: Crisp Left Accent Bar ─── */
 .nav-item.active {
   color: var(--accent-red);
   font-weight: 600;
@@ -158,34 +177,34 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 6px;
+  bottom: 6px;
   width: 3px;
-  height: 60%;
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   background: var(--accent-gradient);
 }
 
 .nav-icon {
-  font-size: 1.2rem;
-  width: 24px;
+  font-size: 1.15rem;
+  width: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: color 0.15s ease;
 }
 
 .nav-label {
   overflow: hidden;
 }
 
-/* Sidebar Footer */
+/* ─── Footer ─── */
 .sidebar-footer {
-  padding: 0.75rem;
+  padding: var(--sp-3);
   border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 2px;
 }
 
 .theme-toggle:hover {
@@ -201,14 +220,14 @@
 }
 
 .logout-btn:hover {
-  background: rgba(230, 57, 70, 0.12) !important;
+  background: hsla(4, 78%, 56%, 0.1) !important;
 }
 
-/* Main Content */
+/* ─── Main Content ─── */
 .sidebar-main {
   flex: 1;
   margin-left: 260px;
-  transition: margin-left 0.25s ease;
+  transition: margin-left 0.2s ease;
   min-height: 100vh;
   background: var(--bg-primary);
 }
@@ -217,22 +236,25 @@
   margin-left: 72px;
 }
 
-/* Mobile Hamburger */
+/* ─── Mobile Hamburger ─── */
 .mobile-hamburger {
   display: none;
   position: fixed;
-  top: 1rem;
-  left: 1rem;
+  top: var(--sp-4);
+  left: var(--sp-4);
   z-index: 1002;
   background: var(--sidebar-bg);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   font-size: 1.25rem;
-  padding: 0.65rem;
-  border-radius: 0.75rem;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--shadow-md);
+  transition: background 0.15s ease, border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .mobile-hamburger:hover {
@@ -244,22 +266,22 @@
   transform: scale(0.95);
 }
 
-/* Mobile Overlay */
+/* ─── Mobile Overlay ─── */
 .sidebar-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: hsla(0, 0%, 0%, 0.4);
   backdrop-filter: blur(4px);
   z-index: 1000;
 }
 
-/* Responsive */
+/* ─── Responsive ─── */
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
     width: 260px !important;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-xl);
   }
 
   .sidebar.mobile-open {

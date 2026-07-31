@@ -305,5 +305,113 @@ export const clearUserMatchHistory = async (userId) => {
   });
 };
 
+// ============ REVIEWS ============
+
+const REVIEWS_COLLECTION = 'reviews';
+
+/**
+ * Add a new player review
+ * @param {Object} reviewData - { userId, displayName, email, review, suggestion }
+ * @returns {Promise<DocumentReference>} Review document reference
+ */
+export const addReview = async (reviewData) => {
+  const reviewRef = await addDoc(collection(firestore, REVIEWS_COLLECTION), {
+    ...reviewData,
+    timestamp: serverTimestamp()
+  });
+  return reviewRef;
+};
+
+/**
+ * Get all reviews (for admin view)
+ * @param {number} limitCount - Maximum number of reviews to retrieve
+ * @returns {Promise<QuerySnapshot>} Reviews snapshot
+ */
+export const getAllReviews = async (limitCount = 100) => {
+  const q = query(
+    collection(firestore, REVIEWS_COLLECTION),
+    orderBy('timestamp', 'desc'),
+    limit(limitCount)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot;
+};
+
+/**
+ * Listen to real-time updates of all reviews
+ * @param {Function} callback - Callback function with (snapshot)
+ * @returns {Function} Unsubscribe function
+ */
+export const onReviewsChange = (callback) => {
+  const q = query(
+    collection(firestore, REVIEWS_COLLECTION),
+    orderBy('timestamp', 'desc')
+  );
+  return onSnapshot(q, callback);
+};
+
+/**
+ * Delete a review
+ * @param {string} reviewId - Review document ID
+ * @returns {Promise<void>}
+ */
+export const deleteReview = async (reviewId) => {
+  await deleteDoc(doc(firestore, REVIEWS_COLLECTION, reviewId));
+};
+
+// ============ POSTED REVIEWS ============
+
+const POSTED_REVIEWS_COLLECTION = 'postedReviews';
+
+/**
+ * Add a review to the posted reviews collection (for homepage display)
+ * @param {Object} reviewData - { displayName, email, review, suggestion, originalReviewId }
+ * @returns {Promise<DocumentReference>} Posted review document reference
+ */
+export const addPostedReview = async (reviewData) => {
+  const postedReviewRef = await addDoc(collection(firestore, POSTED_REVIEWS_COLLECTION), {
+    ...reviewData,
+    timestamp: serverTimestamp()
+  });
+  return postedReviewRef;
+};
+
+/**
+ * Get all posted reviews (for homepage display)
+ * @param {number} limitCount - Maximum number of posted reviews to retrieve
+ * @returns {Promise<QuerySnapshot>} Posted reviews snapshot
+ */
+export const getPostedReviews = async (limitCount = 20) => {
+  const q = query(
+    collection(firestore, POSTED_REVIEWS_COLLECTION),
+    orderBy('timestamp', 'desc'),
+    limit(limitCount)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot;
+};
+
+/**
+ * Listen to real-time updates of all posted reviews
+ * @param {Function} callback - Callback function with (snapshot)
+ * @returns {Function} Unsubscribe function
+ */
+export const onPostedReviewsChange = (callback) => {
+  const q = query(
+    collection(firestore, POSTED_REVIEWS_COLLECTION),
+    orderBy('timestamp', 'desc')
+  );
+  return onSnapshot(q, callback);
+};
+
+/**
+ * Delete a posted review
+ * @param {string} postedReviewId - Posted review document ID
+ * @returns {Promise<void>}
+ */
+export const deletePostedReview = async (postedReviewId) => {
+  await deleteDoc(doc(firestore, POSTED_REVIEWS_COLLECTION, postedReviewId));
+};
+
 // Export firestore instance for direct access if needed
 export { firestore };

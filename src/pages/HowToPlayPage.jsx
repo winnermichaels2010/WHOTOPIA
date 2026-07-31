@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaDice, FaStar, FaCircle, FaPlus, FaMinus, FaBan, FaForward, FaShoppingBasket, FaChevronDown, FaBookOpen, FaBullseye, FaLightbulb, FaLayerGroup } from 'react-icons/fa';
+import { useAuthContext } from '../context/AuthContext';
 import './HowToPlayPage.css';
 
 const sections = [
@@ -36,6 +38,8 @@ const tips = [
 ];
 
 const HowToPlayPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [activeSection, setActiveSection] = useState('overview');
   const [flippedCard, setFlippedCard] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -352,7 +356,7 @@ const HowToPlayPage = () => {
       <section className="htp-footer">
         <div className="htp-footer-glow" />
         <p>Now that you know the rules, jump into a game!</p>
-        <button className="htp-footer-btn" onClick={() => document.querySelector('.htp-hero')?.scrollIntoView({ behavior: 'smooth' })}>
+        <button className="htp-footer-btn" onClick={() => user ? navigate('/play/ai') : navigate('/login')}>
           <FaDice /> Ready to Play
         </button>
       </section>
