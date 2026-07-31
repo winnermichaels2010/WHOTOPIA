@@ -923,10 +923,6 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .dash-stat-card:last-child {
-    grid-column: span 2;
-  }
-
   .dash-action-grid {
     grid-template-columns: 1fr;
   }
@@ -960,9 +956,5 @@
 @media (max-width: 400px) {
   .dash-stats-grid {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .dash-stat-card--best {
-    grid-column: span 2;
   }
 }
