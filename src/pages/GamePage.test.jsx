@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import GamePage from './GamePage.jsx';
@@ -12,6 +12,7 @@ const fireGameListener = (snapshot) => {
 
 vi.mock('firebase/database', () => ({
   ref: vi.fn(() => ({})),
+  getDatabase: vi.fn(() => ({})),
   onDisconnect: vi.fn(() => ({ remove: vi.fn(), transaction: vi.fn(), cancel: vi.fn() })),
 }));
 
@@ -58,6 +59,10 @@ beforeEach(() => {
   writtenState = null;
   Object.keys(stateListeners).forEach((k) => delete stateListeners[k]);
   vi.clearAllMocks();
+});
+
+beforeAll(() => {
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 describe('GamePage online mode', () => {

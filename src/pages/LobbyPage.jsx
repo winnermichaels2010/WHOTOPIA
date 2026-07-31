@@ -15,22 +15,10 @@ import {
   realtimeDB,
 } from '../firebase/services/realtimeDBService.js';
 import { addPlayerToRoom } from '../firebase/services/realtimeDBService.js';
+import { DEFAULT_RULES, isDefaultRules } from '../game/rules';
 import './LobbyPage.css';
 
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-const DEFAULT_RULES = {
-  startingCards: 5,
-  stackingPenalties: true,
-  allowMultiPlay: false,
-  enablePick2: true,
-  enablePick3: true,
-  enableSuspension: true,
-  enableHoldOn: true,
-  enableGeneralMarket: true,
-  allowDefendPick2: true,
-  allowDefendPick3: true,
-};
 
 const generateRoomCode = () => {
   let code = '';
@@ -149,6 +137,7 @@ const LobbyPage = () => {
       });
 
       startRoomListeners(roomCode);
+      setGameRules({ ...DEFAULT_RULES });
       setShowRulesPopup(true);
     } catch (err) {
       console.error('Failed to create room:', err);
@@ -250,8 +239,16 @@ const LobbyPage = () => {
     }
   };
 
-  const handleApplyDefaultRules = () => {
+  const handleApplyDefaultRules = async () => {
     setGameRules({ ...DEFAULT_RULES });
+    if (currentRoom) {
+      try {
+        await updateGameRoom(currentRoom.id, { rules: { ...DEFAULT_RULES } });
+      } catch (err) {
+        console.error('Failed to save rules:', err);
+      }
+    }
+    setShowRulesPopup(false);
   };
 
   const handleSaveRulesAndClose = async () => {
@@ -267,6 +264,7 @@ const LobbyPage = () => {
 
   const isHost = currentRoom && (user?.uid === currentRoom.hostId);
   const playerList = Object.entries(players || {});
+  const rulesModified = !isDefaultRules(gameRules);
 
   if (currentRoom) {
     return (
@@ -368,6 +366,17 @@ const LobbyPage = () => {
                         />
                         <span className="toggle-slider"></span>
                       </label>
+                    </div>
+                    <div className="rule-item">
+                      <label>Whot Card Power</label>
+                      <select
+                        value={gameRules.whotCardPower}
+                        onChange={(e) => setGameRules(prev => ({ ...prev, whotCardPower: e.target.value }))}
+                      >
+                        <option value="full">Full Power</option>
+                        <option value="limited">Limited</option>
+                        <option value="off">Disabled</option>
+                      </select>
                     </div>
                   </div>
                 )}
@@ -523,6 +532,18 @@ const LobbyPage = () => {
                       <option value={7}>7 cards</option>
                     </select>
                   </div>
+
+                  <div className="rules-popup-item">
+                    <span className="rules-popup-label">Whot Card Power</span>
+                    <select
+                      value={gameRules.whotCardPower}
+                      onChange={(e) => setGameRules(prev => ({ ...prev, whotCardPower: e.target.value }))}
+                    >
+                      <option value="full">Full Power</option>
+                      <option value="limited">Limited (No penalty)</option>
+                      <option value="off">Disabled</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -530,9 +551,11 @@ const LobbyPage = () => {
                 <button className="rules-popup-btn default" onClick={handleApplyDefaultRules}>
                   <FaMagic /> Use Default Settings
                 </button>
-                <button className="rules-popup-btn save" onClick={handleSaveRulesAndClose}>
-                  <FaCheck /> Save & Continue
-                </button>
+                {rulesModified && (
+                  <button className="rules-popup-btn save" onClick={handleSaveRulesAndClose}>
+                    <FaCheck /> Save & Continue
+                  </button>
+                )}
               </div>
             </div>
           </div>

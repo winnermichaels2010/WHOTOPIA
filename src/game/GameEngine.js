@@ -1,7 +1,9 @@
 import WhotDeck from './WhotDeck';
+import { DEFAULT_RULES } from './rules';
 
 class GameEngine {
-  constructor() {
+  constructor(rules = {}) {
+    this.rules = { ...DEFAULT_RULES, ...rules };
     this.deck = new WhotDeck();
     this.players = [];
     this.currentTurn = 0;
@@ -16,7 +18,7 @@ class GameEngine {
     this._pendingPenaltyValue = 0;
   }
 
-  initGame(playerNames, cardsPerPlayer = 5) {
+  initGame(playerNames, cardsPerPlayer = this.rules.startingCards) {
     this.players = playerNames.map((name, index) => ({
       id: index,
       name,
@@ -71,7 +73,7 @@ class GameEngine {
       return { valid: false, reason: 'Not your turn' };
     }
     if (this.drawPenalty > 0) {
-      if (this._pendingPenaltyValue > 0 && card.value === this._pendingPenaltyValue) {
+      if (this._canDefend(card)) {
         return { valid: true, reason: '' };
       }
       return { valid: false, reason: `You must draw ${this.drawPenalty} penalty card(s)` };
@@ -81,7 +83,12 @@ class GameEngine {
     if (!topCard) return { valid: true, reason: '' };
 
     if (card.value === 20) {
-      return { valid: true, reason: '' };
+      if (this.rules.whotCardPower === 'full') {
+        return { valid: true, reason: '' };
+      }
+      if (this.rules.whotCardPower === 'off') {
+        return { valid: false, reason: 'Whot cards are disabled.' };
+      }
     }
 
     if (card.symbol === this.currentSymbol) {
@@ -116,6 +123,7 @@ class GameEngine {
     player.hand.splice(cardIndex, 1);
     player.cardCount = player.hand.length;
 
+    const prevTop = this.deck.getTopCard();
     this.deck.playCard(card);
 
     if (card.value === 20 && chosenSymbol) {
@@ -124,16 +132,23 @@ class GameEngine {
       this.currentSymbol = card.symbol;
     }
 
-    const isDefense = this.drawPenalty > 0 && this._pendingPenaltyValue > 0 && card.value === this._pendingPenaltyValue;
+    const isDefense = this.drawPenalty > 0 && this._pendingPenaltyValue > 0 && card.value === this._pendingPenaltyValue && this._canDefend(card);
 
     let effects;
     if (isDefense) {
-      this.drawPenalty = 0;
-      this._pendingPenaltyValue = 0;
-      effects = { holdOn: false, drawPenaltyAdded: 0, suspension: false, generalMarket: false };
-      this.lastAction = `${player.name} defended with ${card.name}!`;
+      const added = this._penaltyValue(card);
+      this.drawPenalty += added;
+      this._pendingPenaltyValue = card.value;
+      effects = { holdOn: false, drawPenaltyAdded: added, suspension: false, generalMarket: false };
+      this.lastAction = `${player.name} defended with ${card.name}! Next player must draw ${this.drawPenalty}.`;
     } else {
       effects = this.applySpecialEffects(card, playerId);
+    }
+
+    if (this.rules.allowMultiPlay && !isDefense && !this.repeatTurn) {
+      if (prevTop && prevTop.value === card.value) {
+        this.repeatTurn = true;
+      }
     }
 
     if (player.hand.length === 0) {
@@ -176,35 +191,45 @@ class GameEngine {
 
     switch (card.specialType) {
       case 'hold':
-        effects.holdOn = true;
-        this.repeatTurn = true;
-        this.lastAction = 'Hold On! Same player plays again.';
+        if (this.rules.enableHoldOn) {
+          effects.holdOn = true;
+          this.repeatTurn = true;
+          this.lastAction = 'Hold On! Same player plays again.';
+        }
         break;
 
       case 'pick2':
-        this.drawPenalty += 2;
-        this._pendingPenaltyValue = 2;
-        effects.drawPenaltyAdded = 2;
-        this.lastAction = 'Pick Two! Next player draws 2 and loses turn.';
+        if (this.rules.enablePick2) {
+          this.drawPenalty += 2;
+          this._pendingPenaltyValue = 2;
+          effects.drawPenaltyAdded = 2;
+          this.lastAction = 'Pick Two! Next player draws 2 and loses turn.';
+        }
         break;
 
       case 'pick3':
-        this.drawPenalty += 3;
-        this._pendingPenaltyValue = 5;
-        effects.drawPenaltyAdded = 3;
-        this.lastAction = 'Pick Three! Next player draws 3 and loses turn.';
+        if (this.rules.enablePick3) {
+          this.drawPenalty += 3;
+          this._pendingPenaltyValue = 5;
+          effects.drawPenaltyAdded = 3;
+          this.lastAction = 'Pick Three! Next player draws 3 and loses turn.';
+        }
         break;
 
       case 'suspension':
-        this.skipTurn = true;
-        effects.suspension = true;
-        this.lastAction = 'Suspension! Next player is skipped.';
+        if (this.rules.enableSuspension) {
+          this.skipTurn = true;
+          effects.suspension = true;
+          this.lastAction = 'Suspension! Next player is skipped.';
+        }
         break;
 
       case 'generalMarket':
-        this.drawPenalty += 1;
-        effects.generalMarket = true;
-        this.lastAction = 'General Market! Next player draws 1 card.';
+        if (this.rules.enableGeneralMarket) {
+          this.drawPenalty += 1;
+          effects.generalMarket = true;
+          this.lastAction = 'General Market! Next player draws 1 card.';
+        }
         break;
 
       default:
@@ -323,18 +348,28 @@ class GameEngine {
     if (this.gameStatus !== 'playing') return [];
     if (playerId !== this.currentTurn) return [];
 
-    if (this.drawPenalty > 0) {
-      if (this._pendingPenaltyValue > 0) {
-        return this.players[playerId].hand.filter(card => {
-          return card.value === this._pendingPenaltyValue;
-        });
-      }
-      return [];
-    }
-
     return this.players[playerId].hand.filter(card => {
       return this.canPlayCard(card, playerId).valid;
     });
+  }
+
+  _canDefend(card) {
+    if (this.drawPenalty <= 0 || this._pendingPenaltyValue <= 0) return false;
+    if (card.value !== this._pendingPenaltyValue) return false;
+    if (!this.rules.stackingPenalties) return false;
+    if (this._pendingPenaltyValue === 2) return this.rules.allowDefendPick2;
+    if (this._pendingPenaltyValue === 5) return this.rules.allowDefendPick3;
+    return false;
+  }
+
+  _penaltyValue(card) {
+    if (!card) return 0;
+    switch (card.specialType) {
+      case 'pick2': return 2;
+      case 'pick3': return 3;
+      case 'generalMarket': return 1;
+      default: return 0;
+    }
   }
 
   _formatLastAction(playerName, card, chosenSymbol) {
@@ -352,6 +387,7 @@ class GameEngine {
       return card;
     };
     const state = {
+      rules: this.rules,
       players: this.players.map(p => ({
         ...p,
         hand: p.hand.map(stripCard),
@@ -376,6 +412,7 @@ class GameEngine {
 
   importState(state) {
     const restoreCard = (c) => ({ ...c, specialType: c.specialType ?? null });
+    this.rules = { ...DEFAULT_RULES, ...(state.rules || {}) };
     this.players = state.players.map(p => ({
       ...p,
       hand: p.hand.map(restoreCard),

@@ -209,7 +209,7 @@ describe('Whot Game Rules', () => {
       expect(engine.currentTurn).toBe(0);
     });
 
-    it('allows penalized player to defend with card 2', () => {
+    it('allows penalized player to defend with card 2 (stacking penalty)', () => {
       const engine = makeGame(['Alice', 'Bob'], 2);
       const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
       engine.playCard(p2, 0);
@@ -219,7 +219,7 @@ describe('Whot Game Rules', () => {
       expect(penaltyBefore).toBeGreaterThan(0);
       const result = engine.playCard(defenseCard, 1);
       expect(result.success).toBe(true);
-      expect(engine.drawPenalty).toBe(0);
+      expect(engine.drawPenalty).toBe(4);
       expect(engine.players[1].cardCount).toBe(beforeCount - 1);
     });
 
@@ -231,7 +231,7 @@ describe('Whot Game Rules', () => {
       expect(engine.canPlayCard(fiveCard, 1).valid).toBe(false);
     });
 
-    it('allows penalized player to defend with card 5', () => {
+    it('allows penalized player to defend with card 5 (stacking penalty)', () => {
       const engine = makeGame(['Alice', 'Bob'], 2);
       const p5 = addCardToHand(engine, 0, 5, engine.currentSymbol);
       engine.playCard(p5, 0);
@@ -240,8 +240,35 @@ describe('Whot Game Rules', () => {
       expect(engine.drawPenalty).toBeGreaterThan(0);
       const result = engine.playCard(defenseCard, 1);
       expect(result.success).toBe(true);
-      expect(engine.drawPenalty).toBe(0);
+      expect(engine.drawPenalty).toBe(6);
       expect(engine.players[1].cardCount).toBe(beforeCount - 1);
+    });
+
+    it('does not allow defense when stacking penalties is disabled', () => {
+      const engine = new GameEngine({ stackingPenalties: false });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
+      engine.playCard(p2, 0);
+      const defenseCard = addCardToHand(engine, 1, 2, 'star');
+      expect(engine.canPlayCard(defenseCard, 1).valid).toBe(false);
+    });
+
+    it('does not allow defending a pick 2 when allowDefendPick2 is disabled', () => {
+      const engine = new GameEngine({ allowDefendPick2: false });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
+      engine.playCard(p2, 0);
+      const defenseCard = addCardToHand(engine, 1, 2, 'star');
+      expect(engine.canPlayCard(defenseCard, 1).valid).toBe(false);
+    });
+
+    it('does not allow defending a pick 3 when allowDefendPick3 is disabled', () => {
+      const engine = new GameEngine({ allowDefendPick3: false });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const p5 = addCardToHand(engine, 0, 5, engine.currentSymbol);
+      engine.playCard(p5, 0);
+      const defenseCard = addCardToHand(engine, 1, 5, 'circle');
+      expect(engine.canPlayCard(defenseCard, 1).valid).toBe(false);
     });
   });
 
@@ -310,6 +337,132 @@ describe('Whot Game Rules', () => {
       expect(turns[1]).toBe(2);
       expect(turns[2]).toBe(3);
       expect(turns[3]).toBe(0);
+    });
+  });
+
+  describe('Configurable Game Rules', () => {
+    it('deals the configured number of starting cards', () => {
+      const engine = new GameEngine({ startingCards: 3 });
+      engine.initGame(['Alice', 'Bob']);
+      expect(engine.players[0].cardCount).toBe(3);
+      expect(engine.players[1].cardCount).toBe(3);
+    });
+
+    it('uses the startingCards default of 5 when no rules are given', () => {
+      const engine = makeGame(['Alice', 'Bob']);
+      expect(engine.players[0].cardCount).toBe(5);
+    });
+
+    it('does not apply pick 2 penalty when enablePick2 is disabled', () => {
+      const engine = new GameEngine({ enablePick2: false });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const p2 = addCardToHand(engine, 0, 2, engine.currentSymbol);
+      const result = engine.playCard(p2, 0);
+      expect(result.success).toBe(true);
+      expect(engine.drawPenalty).toBe(0);
+    });
+
+    it('does not apply pick 3 penalty when enablePick3 is disabled', () => {
+      const engine = new GameEngine({ enablePick3: false });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const p5 = addCardToHand(engine, 0, 5, engine.currentSymbol);
+      const result = engine.playCard(p5, 0);
+      expect(result.success).toBe(true);
+      expect(engine.drawPenalty).toBe(0);
+    });
+
+    it('does not repeat turn for hold on when enableHoldOn is disabled', () => {
+      const engine = new GameEngine({ enableHoldOn: false });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const hold = addCardToHand(engine, 0, 1, engine.currentSymbol);
+      const result = engine.playCard(hold, 0);
+      expect(result.success).toBe(true);
+      expect(engine.currentTurn).toBe(1);
+    });
+
+    it('does not skip next player when enableSuspension is disabled', () => {
+      const engine = new GameEngine({ enableSuspension: false });
+      engine.initGame(['Alice', 'Bob', 'Charlie'], 2);
+      const sCard = addCardToHand(engine, 0, 8, engine.currentSymbol);
+      const result = engine.playCard(sCard, 0);
+      expect(result.success).toBe(true);
+      expect(engine.currentTurn).toBe(1);
+    });
+
+    it('does not apply general market penalty when enableGeneralMarket is disabled', () => {
+      const engine = new GameEngine({ enableGeneralMarket: false });
+      engine.initGame(['Alice', 'Bob', 'Charlie'], 2);
+      const gmCard = addCardToHand(engine, 0, 14, engine.currentSymbol);
+      const result = engine.playCard(gmCard, 0);
+      expect(result.success).toBe(true);
+      expect(engine.drawPenalty).toBe(0);
+    });
+
+    it('allows playing multiple matching-value cards when allowMultiPlay is enabled', () => {
+      const engine = new GameEngine({ allowMultiPlay: true });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const topCard = engine.deck.getTopCard();
+      const card1 = addCardToHand(engine, 0, topCard.value, engine.currentSymbol);
+      const result1 = engine.playCard(card1, 0);
+      expect(result1.success).toBe(true);
+      expect(engine.currentTurn).toBe(0);
+
+      const card2 = addCardToHand(engine, 0, topCard.value, 'circle');
+      const result2 = engine.playCard(card2, 0);
+      expect(result2.success).toBe(true);
+      expect(engine.currentTurn).toBe(0);
+
+      const otherValue = [3, 7, 11].find(v => v !== topCard.value);
+      const card3 = addCardToHand(engine, 0, otherValue, engine.currentSymbol);
+      const result3 = engine.playCard(card3, 0);
+      expect(result3.success).toBe(true);
+      expect(engine.currentTurn).toBe(1);
+    });
+
+    it('does not repeat turn when allowMultiPlay is disabled', () => {
+      const engine = new GameEngine({ allowMultiPlay: false });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const sym = engine.currentSymbol;
+      const card1 = addCardToHand(engine, 0, 4, sym);
+      const result1 = engine.playCard(card1, 0);
+      expect(result1.success).toBe(true);
+      expect(engine.currentTurn).toBe(1);
+    });
+
+    it('keeps Whot card always playable when whotCardPower is full', () => {
+      const engine = new GameEngine({ whotCardPower: 'full' });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const whot = addCardToHand(engine, 0, 20, 'whot');
+      expect(engine.canPlayCard(whot, 0).valid).toBe(true);
+    });
+
+    it('does not allow playing Whot card when whotCardPower is off', () => {
+      const engine = new GameEngine({ whotCardPower: 'off' });
+      engine.initGame(['Alice', 'Bob'], 2);
+      const whot = addCardToHand(engine, 0, 20, 'whot');
+      expect(engine.canPlayCard(whot, 0).valid).toBe(false);
+    });
+
+    it('requires a match to play Whot card when whotCardPower is limited', () => {
+      const engine = new GameEngine({ whotCardPower: 'limited' });
+      engine.initGame(['Alice', 'Bob'], 2);
+      engine.deck.discardPile = [{ id: 'top-card', value: 7, symbol: 'star', symbolDisplay: '★', name: '7', isSpecial: false, specialType: null }];
+      engine.currentSymbol = 'star';
+      const whot = addCardToHand(engine, 0, 20, 'whot');
+      expect(engine.canPlayCard(whot, 0).valid).toBe(false);
+    });
+
+    it('exposes rules through exportState and restores them on importState', () => {
+      const engine = new GameEngine({ startingCards: 3, allowMultiPlay: true });
+      engine.initGame(['Alice', 'Bob'], 3);
+      const state = engine.exportState();
+      expect(state.rules.startingCards).toBe(3);
+      expect(state.rules.allowMultiPlay).toBe(true);
+
+      const restored = new GameEngine();
+      restored.importState(state);
+      expect(restored.rules.startingCards).toBe(3);
+      expect(restored.rules.allowMultiPlay).toBe(true);
     });
   });
 });

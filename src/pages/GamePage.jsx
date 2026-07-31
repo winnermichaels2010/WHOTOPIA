@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import GameEngine from '../game/GameEngine';
 import AIEngine from '../game/AIEngine';
+import { DEFAULT_RULES } from '../game/rules';
 import PlayerHand from '../components/game/PlayerHand';
 import OpponentArea from '../components/game/OpponentArea';
 import Card from '../components/game/Card';
@@ -28,6 +29,15 @@ const DIFFICULTIES = [
   { id: 'hard', name: 'Hard', desc: 'AI uses advanced strategy' },
 ];
 
+const getInitialDifficulty = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem('whotopia_settings') || '{}');
+    return stored.aiDifficulty || 'medium';
+  } catch {
+    return 'medium';
+  }
+};
+
 const GamePage = () => {
   const { mode, roomId } = useParams();
   const navigate = useNavigate();
@@ -35,6 +45,7 @@ const GamePage = () => {
   const { user } = useAuthContext();
   const gameRef = useRef(null);
   const aiRef = useRef(null);
+  const rulesRef = useRef({ ...DEFAULT_RULES });
   const dbUnsubRef = useRef(null);
   const isHost = location.state?.isHost === true;
   const isOnline = !!roomId;
@@ -47,7 +58,7 @@ const GamePage = () => {
   const [showSymbolPicker, setShowSymbolPicker] = useState(false);
   const [pendingCard, setPendingCard] = useState(null);
   const [showStartScreen, setShowStartScreen] = useState(true);
-  const [difficulty, setDifficulty] = useState('medium');
+  const [difficulty, setDifficulty] = useState(getInitialDifficulty);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [dealing, setDealing] = useState(false);
   const [dealPhase, setDealPhase] = useState(0);
@@ -132,14 +143,16 @@ const GamePage = () => {
   }, [isOnline, roomId, updateGameState]);
 
   const startGame = (diff) => {
-    const engine = new GameEngine();
-    gameRef.current = engine;
-
     const playerName = mode === 'ai' ? 'You' : 'Player 1';
     const storedSettings = JSON.parse(localStorage.getItem('whotopia_settings') || '{}');
     const aiName = mode === 'ai' ? (storedSettings.botName || 'Computer') : 'Player 2';
+    const rules = mode === 'ai' ? { ...DEFAULT_RULES, ...storedSettings } : { ...DEFAULT_RULES };
+    rulesRef.current = rules;
 
-    engine.initGame([playerName, aiName], 5);
+    const engine = new GameEngine(rules);
+    gameRef.current = engine;
+
+    engine.initGame([playerName, aiName]);
     if (mode === 'ai') {
       engine.players[1].isAI = true;
       aiRef.current = new AIEngine(diff || difficulty);
@@ -178,7 +191,7 @@ const GamePage = () => {
       return;
     }
 
-    if (card.value === 20) {
+    if (card.value === 20 && rulesRef.current?.whotCardPower === 'full') {
       setPendingCard(card);
       setShowSymbolPicker(true);
       return;
@@ -387,7 +400,7 @@ const GamePage = () => {
 
       const chosenCard = ai.chooseCard(validCards, state);
 
-      if (chosenCard && chosenCard.value === 20) {
+      if (chosenCard && chosenCard.value === 20 && rulesRef.current?.whotCardPower === 'full') {
         const chosenSymbol = ai.chooseSymbol(engine.getGameState(1));
         const result = engine.playCard(chosenCard, 1, chosenSymbol);
         if (result.success) {
@@ -538,6 +551,7 @@ const GamePage = () => {
           setWrongMoveMessage(null);
           if (gameRef.current) {
             gameRef.current.importState(cleanState);
+            rulesRef.current = { ...DEFAULT_RULES, ...(cleanState.rules || {}) };
 
             const engine = gameRef.current;
             if (engine.gameStatus === 'playing') {
@@ -552,8 +566,9 @@ const GamePage = () => {
 
             updateGameState();
           } else {
-            const engine = new GameEngine();
+            const engine = new GameEngine(cleanState.rules || {});
             engine.importState(cleanState);
+            rulesRef.current = { ...DEFAULT_RULES, ...(cleanState.rules || {}) };
 
             if (engine.gameStatus === 'playing') {
               const emptyIdx = engine.players.findIndex(p => p.hand.length === 0);
@@ -570,14 +585,13 @@ const GamePage = () => {
             updateGameState();
           }
         } else if (isHost) {
-          const engine = new GameEngine();
-          gameRef.current = engine;
-
+          let rules = {};
           let names = ['Player 1', 'Player 2'];
           try {
             const roomSnapshot = await getGameRoom(roomId);
             if (roomSnapshot.exists()) {
               const roomData = roomSnapshot.val();
+              rules = roomData.rules || {};
               const roomPlayers = roomData.players || {};
               const entries = Object.entries(roomPlayers);
               if (entries.length >= 2) {
@@ -588,7 +602,11 @@ const GamePage = () => {
             console.error('Failed to fetch room players:', err);
           }
 
-          engine.initGame(names, 5);
+          rulesRef.current = { ...DEFAULT_RULES, ...rules };
+          const engine = new GameEngine(rules);
+          gameRef.current = engine;
+
+          engine.initGame(names);
 
           const state = engine.exportState();
           (async () => {
