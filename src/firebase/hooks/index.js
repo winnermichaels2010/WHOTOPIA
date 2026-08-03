@@ -13,7 +13,7 @@
  */
 
 export { useAuth } from './useAuth.js';
-export { useUserProfile, useMatchHistory, useLeaderboard, useFirestore } from './useFirestore.js';
+export { useUserProfile, useMatchHistory, useLeaderboard, useFirestore, useNotifications } from './useFirestore.js';
 export { 
   useGameRoom, 
   useAvailableRooms, 

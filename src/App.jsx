@@ -11,8 +11,11 @@ import HowToPlayPage from './pages/HowToPlayPage';
 import TermsPage from './pages/TermsPage';
 import SettingsPage from './pages/SettingsPage';
 import PlayersPage from './pages/PlayersPage';
+import ShareCodePage from './pages/ShareCodePage';
+import NotificationsPage from './pages/NotificationsPage';
 import ReviewPage from './pages/ReviewPage';
 import AdminReviewsPage from './pages/AdminReviewsPage';
+import AdminPlayersPage from './pages/AdminPlayersPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
 import './App.css';
@@ -45,6 +48,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminReviewsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-players"
+              element={
+                <ProtectedRoute>
+                  <AdminPlayersPage />
                 </ProtectedRoute>
               }
             />
@@ -91,6 +102,22 @@ function App() {
                         element={
                           <ProtectedRoute>
                             <PlayersPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/share-code"
+                        element={
+                          <ProtectedRoute>
+                            <ShareCodePage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/notifications"
+                        element={
+                          <ProtectedRoute>
+                            <NotificationsPage />
                           </ProtectedRoute>
                         }
                       />

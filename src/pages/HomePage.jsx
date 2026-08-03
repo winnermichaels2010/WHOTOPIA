@@ -7,16 +7,11 @@ import {
   FaGlobe,
   FaGamepad,
   FaTrophy,
-  FaPlay,
   FaArrowRight,
   FaCalendarAlt,
-  FaLayerGroup,
-  FaHistory,
-  FaMedal,
   FaTrashAlt,
   FaExclamationTriangle,
   FaCheck,
-  FaUsers,
   FaBookOpen,
 } from 'react-icons/fa';
 import './HomePage.css';
@@ -42,21 +37,6 @@ const getInitial = (name) => {
   return name.charAt(0).toUpperCase();
 };
 
-const formatMatchTime = (timestamp) => {
-  if (!timestamp) return '';
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-};
-
 const HomePage = () => {
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -67,7 +47,7 @@ const HomePage = () => {
   const [cleared, setCleared] = useState(false);
 
   const { profile } = useUserProfile(user?.uid);
-  const { matches, clearHistory } = useMatchHistory(user?.uid, 10);
+  const { clearHistory } = useMatchHistory(user?.uid, 10);
 
   const stats = profile?.stats || {};
   const totalMatches = stats.totalMatches || 0;
@@ -203,74 +183,11 @@ const HomePage = () => {
           <span>How to Play</span>
           <FaArrowRight className="dash-link-arrow" />
         </button>
-        <button className="dash-link-card" onClick={() => navigate('/lobby')}>
-          <FaUsers className="dash-link-icon" />
-          <span>Multiplayer Lobby</span>
-          <FaArrowRight className="dash-link-arrow" />
-        </button>
         <button className="dash-link-card" onClick={() => navigate('/settings')}>
           <FaGamepad className="dash-link-icon" />
           <span>Game Settings</span>
           <FaArrowRight className="dash-link-arrow" />
         </button>
-      </section>
-
-      {/* Recent Activity */}
-      <section className="dash-recent">
-        <div className="dash-section-header">
-          <h2>
-            <FaHistory className="dash-section-icon" />
-            Recent Matches
-          </h2>
-          {matches.length > 0 && (
-            <button
-              className="dash-clear-btn"
-              onClick={() => setShowClearConfirm(true)}
-              title="Clear match history"
-            >
-              <FaTrashAlt />
-            </button>
-          )}
-        </div>
-        {matches.length > 0 ? (
-          <div className="dash-recent-list">
-            {matches.map((match) => {
-              const myId = user?.uid;
-              const didWin = match.winner === myId;
-              const isDraw = match.winner === null || match.winner === undefined;
-              const opponentLabel = match.gameMode === 'ai' ? 'Computer' : 'Opponent';
-              return (
-                <div key={match.id} className="dash-recent-item">
-                  <div className={`dash-recent-result ${didWin ? 'win' : isDraw ? 'draw' : 'loss'}`}>
-                    {didWin ? <FaTrophy /> : isDraw ? '—' : <FaMedal />}
-                  </div>
-                  <div className="dash-recent-details">
-                    <span className="dash-recent-opponent">vs {opponentLabel}</span>
-                    <span className="dash-recent-mode">{match.gameMode === 'ai' ? 'AI Match' : 'Online Match'}</span>
-                  </div>
-                  <span className="dash-recent-time">{formatMatchTime(match.timestamp)}</span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="dash-recent-empty">
-            <div className="dash-recent-empty-icon">
-              <FaLayerGroup />
-            </div>
-            <p className="dash-recent-empty-title">No matches yet</p>
-            <p className="dash-recent-empty-text">
-              Your game history will appear here once you start playing.
-            </p>
-            <button
-              className="dash-recent-empty-action"
-              onClick={() => navigate('/play/ai')}
-            >
-              <FaPlay />
-              Start your first game
-            </button>
-          </div>
-        )}
       </section>
 
       {/* Clear History Confirmation Modal */}

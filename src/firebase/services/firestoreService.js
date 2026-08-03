@@ -211,6 +211,37 @@ export const getAllUsers = async () => {
 };
 
 /**
+ * Remove a player (admin action). The player is hidden from the public
+ * Players page until they are re-added.
+ * @param {string} userId - User ID to remove
+ * @param {string} [removedBy] - Name of the admin who removed the player
+ * @returns {Promise<void>}
+ */
+export const removeUser = async (userId, removedBy = 'Admin') => {
+  await updateDoc(doc(firestore, USERS_COLLECTION, userId), {
+    isRemoved: true,
+    removedAt: serverTimestamp(),
+    removedBy,
+    updatedAt: serverTimestamp()
+  });
+};
+
+/**
+ * Re-add a previously removed player (admin action). The player shows
+ * up again on the public Players page with a "readded" marker.
+ * @param {string} userId - User ID to re-add
+ * @returns {Promise<void>}
+ */
+export const restoreUser = async (userId) => {
+  await updateDoc(doc(firestore, USERS_COLLECTION, userId), {
+    isRemoved: false,
+    wasReadded: true,
+    readdedAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+};
+
+/**
  * Get global leaderboard
  * @param {number} limitCount - Maximum number of players to retrieve
  * @returns {Promise<QuerySnapshot>} Leaderboard snapshot
@@ -435,6 +466,96 @@ export const onPostedReviewsChange = (callback) => {
  */
 export const deletePostedReview = async (postedReviewId) => {
   await deleteDoc(doc(firestore, POSTED_REVIEWS_COLLECTION, postedReviewId));
+};
+
+// ============ NOTIFICATIONS ============
+
+const NOTIFICATIONS_COLLECTION = 'notifications';
+
+/**
+ * Send room-code invite notifications to multiple players
+ * @param {Array<string>} recipientIds - Player IDs to notify
+ * @param {Object} inviteData - { senderId, senderName, roomCode, roomName, message }
+ * @returns {Promise<void>}
+ */
+export const sendRoomInvites = async (recipientIds, inviteData) => {
+  if (!recipientIds || recipientIds.length === 0) return;
+  const batch = writeBatch(firestore);
+  for (const recipientId of recipientIds) {
+    const notifRef = doc(collection(firestore, NOTIFICATIONS_COLLECTION));
+    batch.set(notifRef, {
+      ...inviteData,
+      recipientId,
+      read: false,
+      expired: false,
+      createdAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
+};
+
+/**
+ * Get notifications for a user
+ * @param {string} userId - User ID
+ * @param {number} limitCount - Maximum number of notifications to retrieve
+ * @returns {Promise<QuerySnapshot>} Notifications snapshot
+ */
+export const getUserNotifications = async (userId, limitCount = 100) => {
+  const q = query(
+    collection(firestore, NOTIFICATIONS_COLLECTION),
+    where('recipientId', '==', userId),
+    limit(limitCount)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot;
+};
+
+/**
+ * Listen to real-time notifications for a user
+ * @param {string} userId - User ID
+ * @param {Function} callback - Callback function with (snapshot)
+ * @returns {Function} Unsubscribe function
+ */
+export const onUserNotificationsChange = (userId, callback) => {
+  const q = query(
+    collection(firestore, NOTIFICATIONS_COLLECTION),
+    where('recipientId', '==', userId)
+  );
+  return onSnapshot(q, callback);
+};
+
+/**
+ * Mark notifications as read
+ * @param {Array<string>} notificationIds - Notification document IDs
+ * @returns {Promise<void>}
+ */
+export const markNotificationsRead = async (notificationIds) => {
+  if (!notificationIds || notificationIds.length === 0) return;
+  const batch = writeBatch(firestore);
+  for (const id of notificationIds) {
+    batch.update(doc(firestore, NOTIFICATIONS_COLLECTION, id), { read: true });
+  }
+  await batch.commit();
+};
+
+/**
+ * Mark all notifications for a room as expired
+ * @param {string} roomCode - Room code whose invites are no longer joinable
+ * @returns {Promise<void>}
+ */
+export const markNotificationsExpired = async (roomCode) => {
+  const q = query(
+    collection(firestore, NOTIFICATIONS_COLLECTION),
+    where('roomCode', '==', roomCode)
+  );
+  const snapshot = await getDocs(q);
+  const batch = writeBatch(firestore);
+  snapshot.docs.forEach((d) => {
+    if (!d.data().expired) {
+      batch.update(doc(firestore, NOTIFICATIONS_COLLECTION, d.id), { expired: true });
+    }
+  });
+  await batch.commit();
 };
 
 // Export firestore instance for direct access if needed

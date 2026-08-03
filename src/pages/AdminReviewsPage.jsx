@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthContext } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { onReviewsChange, getAllReviews, deleteReview, clearAllReviews } from '../firebase/services/firestoreService';
+import AdminSidebar from '../components/AdminSidebar';
 import {
   FaStar,
   FaComments,
@@ -10,11 +8,8 @@ import {
   FaEnvelope,
   FaSpinner,
   FaEye,
-  FaSignOutAlt,
   FaSyncAlt,
   FaExclamationCircle,
-  FaMoon,
-  FaSun,
   FaTrashAlt,
   FaTrash,
 } from 'react-icons/fa';
@@ -42,9 +37,6 @@ const sortReviews = (docs) => [...docs].sort((a, b) => {
 });
 
 const AdminReviewsPage = () => {
-  const { logout } = useAuthContext();
-  const { isDark, toggleTheme } = useTheme();
-  const navigate = useNavigate();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -102,11 +94,6 @@ const AdminReviewsPage = () => {
     return name.charAt(0).toUpperCase();
   };
 
-  const handleSignOut = () => {
-    logout();
-    navigate('/login');
-  };
-
   const handleDeleteReview = async () => {
     if (!reviewToDelete) return;
     setDeleting(true);
@@ -139,27 +126,15 @@ const AdminReviewsPage = () => {
   };
 
   return (
-    <div className="admin-reviews-page">
-      {/* Sticky Top Bar */}
-      <nav className="admin-reviews-topbar">
-        <div className="admin-reviews-topbar-left">
-          <FaEye className="admin-reviews-topbar-icon" />
-          <span className="admin-reviews-topbar-title">Player Reviews</span>
-        </div>
-        <div className="admin-reviews-topbar-actions">
-          <button
-            className="admin-reviews-theme-toggle"
-            onClick={toggleTheme}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDark ? <FaSun /> : <FaMoon />}
-          </button>
-          <button className="admin-reviews-topbar-logout" onClick={handleSignOut}>
-            <FaSignOutAlt />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </nav>
+    <AdminSidebar>
+      <div className="admin-reviews-page">
+        {/* Sticky Top Bar */}
+        <nav className="admin-reviews-topbar">
+          <div className="admin-reviews-topbar-left">
+            <FaEye className="admin-reviews-topbar-icon" />
+            <span className="admin-reviews-topbar-title">Player Reviews</span>
+          </div>
+        </nav>
 
       {/* Header */}
       <section className="admin-reviews-hero">
@@ -347,8 +322,9 @@ const AdminReviewsPage = () => {
             </div>
           </div>
         </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AdminSidebar>
   );
 };
 

@@ -38,6 +38,7 @@ import {
   remove,
   onValue,
   onChildAdded,
+  onChildChanged,
   push,
   serverTimestamp,
   off,
@@ -311,6 +312,17 @@ export const onChatMessages = (roomId, callback) => {
 export const onNewChatMessage = (roomId, callback) => {
   const messagesRef = ref(realtimeDB, `${CHAT_PATH}/${roomId}`);
   return onChildAdded(messagesRef, callback);
+};
+
+/**
+ * Listen to updates of existing chat messages
+ * @param {string} roomId - Room ID
+ * @param {Function} callback - Callback function with (snapshot)
+ * @returns {Function} Unsubscribe function
+ */
+export const onChatMessageUpdate = (roomId, callback) => {
+  const messagesRef = ref(realtimeDB, `${CHAT_PATH}/${roomId}`);
+  return onChildChanged(messagesRef, callback);
 };
 
 /**

@@ -105,6 +105,66 @@
   flex-wrap: wrap;
 }
 
+.players-search {
+  flex: 1;
+  min-width: 0;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 2rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.players-search:focus-within {
+  border-color: rgba(230, 57, 70, 0.35);
+  box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
+}
+
+.players-search-icon {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.players-search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.players-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.players-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: var(--hover-bg);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.players-search-clear:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
 .players-count {
   font-size: 0.85rem;
   font-weight: 600;
@@ -201,6 +261,17 @@
   letter-spacing: 0.06em;
   padding: 0.15rem 0.5rem;
   background: var(--active-bg);
+  border-radius: 1rem;
+}
+
+.readded-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #16a34a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  background: hsla(142, 72%, 36%, 0.1);
   border-radius: 1rem;
 }
 
@@ -334,6 +405,11 @@
   .players-list {
     grid-template-columns: 1fr;
     gap: 0.5rem;
+  }
+
+  .players-search {
+    max-width: none;
+    padding: 0.55rem 0.9rem;
   }
 
   .player-item {

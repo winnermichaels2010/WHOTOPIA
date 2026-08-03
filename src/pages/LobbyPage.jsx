@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ref, set } from 'firebase/database';
 import { useAuthContext } from '../context/AuthContext';
 import {
   FaArrowLeft, FaGamepad, FaCopy, FaCheck, FaSpinner, FaUsers, FaUser,
   FaPlay, FaCog, FaChevronDown, FaShieldAlt, FaLayerGroup, FaMagic,
+  FaShareAlt,
 } from 'react-icons/fa';
 import {
   getGameRoom,
@@ -15,6 +16,7 @@ import {
   realtimeDB,
 } from '../firebase/services/realtimeDBService.js';
 import { addPlayerToRoom } from '../firebase/services/realtimeDBService.js';
+import { markNotificationsExpired } from '../firebase/services/firestoreService';
 import { DEFAULT_RULES, isDefaultRules } from '../game/rules';
 import './LobbyPage.css';
 
@@ -30,6 +32,8 @@ const generateRoomCode = () => {
 
 const LobbyPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuthContext();
   const [tab, setTab] = useState('create');
   const [joinCode, setJoinCode] = useState('');
@@ -50,6 +54,7 @@ const LobbyPage = () => {
   const playersListenerRef = useRef(null);
   const playersRef = useRef({});
   const prevPlayersRef = useRef(null);
+  const autoJoinRef = useRef(false);
 
   const cleanupListeners = useCallback(() => {
     if (roomListenerRef.current) {
@@ -169,9 +174,9 @@ const LobbyPage = () => {
     setCreating(false);
   };
 
-  const handleJoinRoom = async () => {
-    const code = joinCode.trim().toUpperCase();
-    if (!code || code.length < 4) {
+  const joinRoomWithCode = useCallback(async (code) => {
+    const trimmed = (code || '').trim().toUpperCase();
+    if (!trimmed || trimmed.length < 4) {
       setJoinError('Please enter a valid room code');
       return;
     }
@@ -180,39 +185,75 @@ const LobbyPage = () => {
     setJoinError('');
 
     try {
-      const snapshot = await getGameRoom(code);
+      const snapshot = await getGameRoom(trimmed);
       if (!snapshot.exists()) {
         setJoinError('Room not found. Check the code and try again.');
-        setJoining(false);
         return;
       }
 
       const room = snapshot.val();
       if (room.status !== 'waiting') {
         setJoinError('This game has already started.');
-        setJoining(false);
         return;
       }
 
       if (room.currentPlayers >= room.maxPlayers) {
         setJoinError('Room is full.');
-        setJoining(false);
         return;
       }
 
-      await addPlayerToRoom(code, user?.uid || 'guest', {
+      await addPlayerToRoom(trimmed, user?.uid || 'guest', {
         displayName: user?.displayName || 'Player',
         photoURL: user?.photoURL || null,
         status: 'ready',
         isHost: false,
       });
 
-      startRoomListeners(code);
+      startRoomListeners(trimmed);
     } catch (err) {
       setJoinError(`Failed to join room: ${err.message || 'Try again.'}`);
       console.error('Join room error:', err);
     }
     setJoining(false);
+  }, [startRoomListeners, user]);
+
+  useEffect(() => {
+    const joinParam = searchParams.get('join');
+    if (joinParam && !currentRoom && user && !autoJoinRef.current) {
+      autoJoinRef.current = true;
+      joinRoomWithCode(joinParam);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, currentRoom, user, joinRoomWithCode]);
+
+  useEffect(() => {
+    const code = location.state?.roomCode;
+    if (!code || !user || currentRoom) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const snapshot = await getGameRoom(code);
+        if (cancelled) return;
+        if (snapshot.exists()) {
+          startRoomListeners(code);
+        }
+        if (!cancelled) {
+          navigate('/lobby', { replace: true, state: null });
+        }
+      } catch (err) {
+        console.error('Failed to reattach to room:', err);
+        if (!cancelled) {
+          navigate('/lobby', { replace: true, state: null });
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [location.state, user, currentRoom, startRoomListeners, navigate]);
+
+  const handleJoinRoom = () => {
+    joinRoomWithCode(joinCode);
   };
 
   const handleStartGame = async () => {
@@ -222,6 +263,11 @@ const LobbyPage = () => {
       const entries = Object.entries(playerList);
       const myIndex = entries.findIndex(([id]) => id === (user?.uid || 'guest'));
       await updateGameRoom(currentRoom.id, { status: 'playing', rules: gameRules });
+      try {
+        await markNotificationsExpired(currentRoom.id);
+      } catch (err) {
+        console.error('Failed to mark invites expired:', err);
+      }
       navigate(`/play/online/${currentRoom.id}`, {
         state: {
           isHost: true,
@@ -233,6 +279,17 @@ const LobbyPage = () => {
       console.error('Failed to start game:', err);
     }
     setStarting(false);
+  };
+
+  const handleShareCode = () => {
+    if (currentRoom?.id) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(currentRoom.id).catch(() => {});
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      navigate(`/share-code?code=${currentRoom.id}`, { state: { roomCode: currentRoom.id } });
+    }
   };
 
   const handleLeaveRoom = async () => {
@@ -314,6 +371,12 @@ const LobbyPage = () => {
                 </button>
               </div>
               <p className="room-code-hint">Share this code with friends to play</p>
+              {isHost && (
+                <button className="share-code-btn" onClick={handleShareCode}>
+                  <FaShareAlt />
+                  Share Code
+                </button>
+              )}
             </div>
 
             <div className="room-players-section">

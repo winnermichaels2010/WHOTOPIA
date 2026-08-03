@@ -132,6 +132,7 @@
 }
 
 .chat-message {
+  position: relative;
   padding: 0.6rem 0.75rem;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -141,6 +142,201 @@
   cursor: grab;
   transition: transform 0.15s ease;
   user-select: none;
+}
+
+.chat-message.selected {
+  border-color: var(--accent-red);
+  background: var(--active-bg);
+  box-shadow: 0 0 0 2px hsla(4, 78%, 56%, 0.25);
+}
+
+.chat-message.deleted {
+  opacity: 0.75;
+  cursor: default;
+}
+
+.chat-selection-check {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background: var(--sidebar-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  color: transparent;
+  transition: all 0.15s ease;
+  pointer-events: none;
+}
+
+.chat-selection-check.selected {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: #fff;
+}
+
+.chat-deleted-text {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-muted);
+  user-select: text;
+  word-break: break-word;
+}
+
+.chat-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--sidebar-bg);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.chat-selection-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-red);
+  white-space: nowrap;
+}
+
+.chat-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chat-selection-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.chat-selection-action:hover {
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.chat-selection-action.danger {
+  background: var(--accent-red);
+  border-color: transparent;
+  color: #fff;
+}
+
+.chat-selection-action.danger:hover {
+  background: hsl(4, 78%, 48%);
+  color: #fff;
+}
+
+.chat-selection-action.cancel {
+  padding: 0.4rem 0.55rem;
+}
+
+.chat-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: chatConfirmFade 0.15s ease;
+}
+
+@keyframes chatConfirmFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.chat-confirm-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  box-shadow: var(--shadow-xl);
+  animation: chatConfirmPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes chatConfirmPop {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.chat-confirm-modal h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.chat-confirm-modal p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.chat-confirm-btn {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.chat-confirm-btn.me {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.chat-confirm-btn.me:hover {
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.chat-confirm-btn.everyone {
+  background: var(--accent-red);
+  color: #fff;
+}
+
+.chat-confirm-btn.everyone:hover {
+  background: hsl(4, 78%, 48%);
+}
+
+.chat-confirm-btn.cancel {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.chat-confirm-btn.cancel:hover {
+  color: var(--text-primary);
 }
 
 .chat-message.dragging {
@@ -358,5 +554,9 @@
 
   .chat-toggle.open {
     right: 0.75rem;
+  }
+
+  .chat-aside.open .chat-header {
+    padding-right: 64px;
   }
 }

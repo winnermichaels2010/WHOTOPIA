@@ -207,6 +207,30 @@
   gap: 2px;
 }
 
+.notifications-toggle .nav-icon {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -7px;
+  right: -11px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--accent-gradient);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--sidebar-bg);
+  box-sizing: content-box;
+}
+
 .theme-toggle:hover {
   color: var(--accent-red);
 }
@@ -254,8 +278,40 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
+.mobile-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.mobile-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.mobile-topbar-brand-icon {
+  font-size: 1.25rem;
+  color: var(--accent-red);
+}
+
+.mobile-topbar-brand-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  white-space: nowrap;
+}
+
 .mobile-hamburger,
-.mobile-theme-toggle {
+.mobile-theme-toggle,
+.mobile-notif-toggle {
   display: none;
   align-items: center;
   justify-content: center;
@@ -277,14 +333,26 @@
   font-size: 1.1rem;
 }
 
+.mobile-notif-toggle {
+  position: relative;
+  font-size: 1.1rem;
+}
+
+.mobile-notif-toggle .notification-badge {
+  top: -5px;
+  right: -6px;
+}
+
 .mobile-hamburger:hover,
-.mobile-theme-toggle:hover {
+.mobile-theme-toggle:hover,
+.mobile-notif-toggle:hover {
   background: var(--hover-bg);
   border-color: var(--accent-red);
 }
 
 .mobile-hamburger:active,
-.mobile-theme-toggle:active {
+.mobile-theme-toggle:active,
+.mobile-notif-toggle:active {
   transform: scale(0.95);
 }
 
@@ -323,7 +391,8 @@
     display: flex;
   }
 
-  .mobile-theme-toggle {
+  .mobile-theme-toggle,
+  .mobile-notif-toggle {
     display: flex;
   }
 

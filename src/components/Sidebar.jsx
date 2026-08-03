@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuthContext } from '../context/AuthContext';
+import { useNotifications } from '../firebase/hooks';
 import { hasLocalReview, REVIEW_SUBMITTED_EVENT } from '../utils/reviewStatus';
-import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe, FaBook, FaFileContract, FaCog, FaUsers, FaStar } from 'react-icons/fa';
+import { FaHome, FaGamepad, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes, FaMoon, FaSun, FaDice, FaRobot, FaGlobe, FaBook, FaFileContract, FaCog, FaUsers, FaStar, FaBell } from 'react-icons/fa';
 import './Sidebar.css';
 
 const allNavItems = [
@@ -28,7 +29,15 @@ const Sidebar = ({ children }) => {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const { user, logout } = useAuthContext();
+  const { unreadCount } = useNotifications(user?.uid);
   const [hasReviewed, setHasReviewed] = useState(() => hasLocalReview(user?.uid));
+
+  const notificationBadge = unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount) : null;
+
+  const handleNotifications = () => {
+    navigate('/notifications');
+    setMobileOpen(false);
+  };
 
   useEffect(() => {
     setHasReviewed(hasLocalReview(user?.uid));
@@ -73,13 +82,29 @@ const Sidebar = ({ children }) => {
         >
           <FaBars />
         </button>
-        <button
-          className="mobile-theme-toggle"
-          onClick={toggleTheme}
-          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          {isDark ? <FaSun /> : <FaMoon />}
-        </button>
+        <span className="mobile-topbar-brand">
+          <FaDice className="mobile-topbar-brand-icon" />
+          <span className="mobile-topbar-brand-text">Whotopia</span>
+        </span>
+        <div className="mobile-topbar-actions">
+          {user && (
+            <button
+              className="mobile-notif-toggle"
+              onClick={handleNotifications}
+              aria-label="Notifications"
+            >
+              <FaBell />
+              {notificationBadge && <span className="notification-badge">{notificationBadge}</span>}
+            </button>
+          )}
+          <button
+            className="mobile-theme-toggle"
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <FaSun /> : <FaMoon />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -132,6 +157,15 @@ const Sidebar = ({ children }) => {
         </nav>
 
         <div className="sidebar-footer">
+          {user && (
+            <button className="nav-item notifications-toggle" onClick={handleNotifications}>
+              <span className="nav-icon">
+                <FaBell />
+                {notificationBadge && <span className="notification-badge">{notificationBadge}</span>}
+              </span>
+              {!collapsed && <span className="nav-label">Notifications</span>}
+            </button>
+          )}
           <button className="nav-item theme-toggle theme-toggle-desktop" onClick={toggleTheme}>
             <span className="nav-icon">{isDark ? <FaSun /> : <FaMoon />}</span>
             {!collapsed && <span className="nav-label">{isDark ? 'Light Mode' : 'Dark Mode'}</span>}

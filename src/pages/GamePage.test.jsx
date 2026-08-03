@@ -35,6 +35,7 @@ vi.mock('../firebase/services/realtimeDBService.js', () => ({
   onRoomPlayersChange: vi.fn(() => () => {}),
   onGameRoomChange: vi.fn(() => () => {}),
   onNewChatMessage: vi.fn(() => () => {}),
+  onChatMessageUpdate: vi.fn(() => () => {}),
   onChatMessages: vi.fn(() => () => {}),
   realtimeDB: {},
 }));

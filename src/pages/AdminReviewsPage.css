@@ -12,17 +12,12 @@
    ---------------------------------------- */
 
 .admin-reviews-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--sp-3) var(--sp-8);
   background: var(--card-bg);
   border-bottom: 1px solid var(--border-color);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .admin-reviews-topbar-left {

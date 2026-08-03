@@ -26,7 +26,10 @@ import {
   getGlobalLeaderboard,
   getWeeklyLeaderboard,
   onLeaderboardChange,
-  clearUserMatchHistory
+  clearUserMatchHistory,
+  onUserNotificationsChange,
+  markNotificationsRead,
+  markNotificationsExpired
 } from '../services/firestoreService.js';
 
 /**
@@ -197,6 +200,70 @@ export const useLeaderboard = (leaderboardType = 'global') => {
     leaderboard,
     loading,
     error
+  };
+};
+
+/**
+ * Custom hook for Firestore Notifications operations
+ * @param {string} userId - User ID to fetch notifications for
+ * @returns {Object} Notifications data and methods
+ */
+export const useNotifications = (userId) => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const unsubscribe = onUserNotificationsChange(userId, (snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+      list.sort((a, b) => {
+        const ta = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+        const tb = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+        return tb - ta;
+      });
+      setNotifications(list);
+      setLoading(false);
+    }, (err) => {
+      console.error('Failed to load notifications:', err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [userId]);
+
+  const markRead = useCallback(async (ids) => {
+    if (!ids || ids.length === 0) return;
+    try {
+      await markNotificationsRead(ids);
+    } catch (err) {
+      console.error('Failed to mark notifications read:', err);
+    }
+  }, []);
+
+  const markExpired = useCallback(async (roomCode) => {
+    if (!roomCode) return;
+    try {
+      await markNotificationsExpired(roomCode);
+    } catch (err) {
+      console.error('Failed to mark notifications expired:', err);
+    }
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  return {
+    notifications,
+    loading,
+    unreadCount,
+    markRead,
+    markExpired
   };
 };
 
