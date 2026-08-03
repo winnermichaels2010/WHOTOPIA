@@ -208,14 +208,15 @@
   gap: 0.6rem;
   padding: 0.65rem 1rem;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(230, 57, 70, 0.3);
+  box-shadow: 0 0 0 1px rgba(230, 57, 70, 0.05);
   border-radius: 2rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .share-search:focus-within {
-  border-color: rgba(230, 57, 70, 0.35);
-  box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
+  border-color: rgba(230, 57, 70, 0.5);
+  box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
 }
 
 .share-search-icon {
