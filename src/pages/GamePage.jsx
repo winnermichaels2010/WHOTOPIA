@@ -1055,9 +1055,14 @@ const GamePage = () => {
             </div>
             <h2>Game Cancelled</h2>
             <p>{cancelledByName || 'Your opponent'} left the game.</p>
-            <button className="connection-leave-btn" onClick={() => navigate('/dashboard')}>
-              Back to Dashboard
-            </button>
+            <div className="connection-popup-actions">
+              <button className="connection-continue-btn" onClick={() => setOpponentLeft(false)}>
+                Continue
+              </button>
+              <button className="connection-leave-btn" onClick={() => navigate('/dashboard')}>
+                Back to Dashboard
+              </button>
+            </div>
           </div>
         </div>
       )}

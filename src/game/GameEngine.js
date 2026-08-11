@@ -401,10 +401,15 @@ class GameEngine {
 
   importState(state) {
     const restoreCard = (c) => ({ ...c, specialType: c.specialType ?? null });
+    const toCardArray = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value && typeof value === 'object') return Object.values(value);
+      return [];
+    };
     this.rules = { ...DEFAULT_RULES, ...(state.rules || {}) };
     this.players = state.players.map(p => ({
       ...p,
-      hand: p.hand.map(restoreCard),
+      hand: toCardArray(p.hand).map(restoreCard),
     }));
     this.currentTurn = state.currentTurn;
     this.currentSymbol = state.currentSymbol ?? null;
@@ -416,8 +421,8 @@ class GameEngine {
     this.lastAction = state.lastAction ?? null;
     this.direction = state.direction;
     this._pendingPenaltyValue = state._pendingPenaltyValue ?? 0;
-    this.deck.cards = state.deck.cards.map(restoreCard);
-    this.deck.discardPile = state.deck.discardPile.map(restoreCard);
+    this.deck.cards = toCardArray(state.deck?.cards).map(restoreCard);
+    this.deck.discardPile = toCardArray(state.deck?.discardPile).map(restoreCard);
   }
 }
 

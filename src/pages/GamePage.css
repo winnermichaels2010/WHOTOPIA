@@ -1350,11 +1350,15 @@
   line-height: 1.5;
 }
 
+.connection-popup-actions {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.connection-continue-btn,
 .connection-leave-btn {
-  width: 100%;
+  flex: 1;
   padding: var(--sp-3) var(--sp-5);
-  background: var(--accent-red);
-  color: #fff;
   border: none;
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
@@ -1362,6 +1366,27 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.connection-continue-btn {
+  background: #4CAF50;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.25);
+}
+
+.connection-continue-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(76, 175, 80, 0.35);
+}
+
+.connection-continue-btn:active {
+  transform: translateY(0);
+}
+
+.connection-leave-btn {
+  background: var(--accent-red);
+  color: #fff;
   box-shadow: 0 2px 8px rgba(230, 57, 70, 0.25);
 }
 

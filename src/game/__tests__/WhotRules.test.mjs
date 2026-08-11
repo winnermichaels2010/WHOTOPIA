@@ -340,6 +340,69 @@ describe('Whot Game Rules', () => {
     });
   });
 
+  describe('Firebase State Sync', () => {
+    const toFirebase = (v) => {
+      if (Array.isArray(v)) {
+        if (v.length === 0) return {};
+        const obj = {};
+        v.forEach((item, i) => { obj[i] = toFirebase(item); });
+        return obj;
+      }
+      if (v && typeof v === 'object') {
+        const obj = {};
+        for (const [k, val] of Object.entries(v)) obj[k] = toFirebase(val);
+        return obj;
+      }
+      return v;
+    };
+
+    const fromFirebase = (v) => {
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        const keys = Object.keys(v);
+        if (keys.length > 0 && keys.every((k) => /^\d+$/.test(k))) {
+          return keys.map((k) => fromFirebase(v[k]));
+        }
+        const obj = {};
+        for (const [k, val] of Object.entries(v)) obj[k] = fromFirebase(val);
+        return obj;
+      }
+      return v;
+    };
+
+    it('imports a finished state where the winner has an empty hand (empty arrays become objects in Firebase)', () => {
+      const engine = makeGame(['Alice', 'Bob'], 1);
+      engine.players[0].hand = [];
+      addCardToHand(engine, 0, 3, engine.currentSymbol);
+      const result = engine.playCard(engine.players[0].hand[0], 0);
+      expect(result.gameOver).toBe(true);
+      expect(engine.gameStatus).toBe('finished');
+
+      const stored = toFirebase(engine.exportState());
+      const readBack = fromFirebase(stored);
+
+      expect(Array.isArray(readBack.players[0].hand)).toBe(false);
+
+      const loser = new GameEngine();
+      expect(() => loser.importState(readBack)).not.toThrow();
+      expect(loser.gameStatus).toBe('finished');
+      expect(loser.winner).toBe(0);
+      expect(Array.isArray(loser.players[0].hand)).toBe(true);
+      expect(loser.players[0].hand).toHaveLength(0);
+      expect(loser.getGameState(1).gameStatus).toBe('finished');
+    });
+
+    it('imports a state with an empty deck (deck arrays become objects in Firebase)', () => {
+      const engine = makeGame(['Alice', 'Bob'], 5);
+      engine.deck.cards = [];
+      const state = toFirebase(engine.exportState());
+      const readBack = fromFirebase(state);
+
+      const restored = new GameEngine();
+      expect(() => restored.importState(readBack)).not.toThrow();
+      expect(restored.deck.cards).toEqual([]);
+    });
+  });
+
   describe('Configurable Game Rules', () => {
     it('deals the configured number of starting cards', () => {
       const engine = new GameEngine({ startingCards: 3 });
