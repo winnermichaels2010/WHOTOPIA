@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import { getAllUsers } from '../firebase/services/firestoreService';
+import { onUsersChange } from '../firebase/services/firestoreService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { FaUsers, FaSearch, FaTimes } from 'react-icons/fa';
 import './PlayersPage.css';
@@ -28,22 +28,17 @@ export default function PlayersPage() {
   useEffect(() => {
     if (authLoading) return;
 
-    const load = async () => {
-      try {
-        const snapshot = await getAllUsers();
-        const list = [];
-        snapshot.forEach((doc) => {
-          list.push({ id: doc.id, ...doc.data() });
-        });
-        setPlayers(list);
-      } catch (err) {
-        console.error('Failed to load players:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const list = [];
+    const unsubscribe = onUsersChange((snapshot) => {
+      list.length = 0;
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setPlayers([...list]);
+      setLoading(false);
+    });
 
-    load();
+    return () => unsubscribe();
   }, [authLoading]);
 
   const query = search.trim().toLowerCase();

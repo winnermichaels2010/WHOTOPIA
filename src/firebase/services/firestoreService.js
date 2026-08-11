@@ -211,6 +211,17 @@ export const getAllUsers = async () => {
 };
 
 /**
+ * Listen to real-time updates of all users.
+ * Reflects profile changes (e.g. displayName updates) immediately.
+ * @param {Function} callback - Callback function with (snapshot)
+ * @returns {Function} Unsubscribe function
+ */
+export const onUsersChange = (callback) => {
+  const q = query(collection(firestore, USERS_COLLECTION));
+  return onSnapshot(q, callback);
+};
+
+/**
  * Remove a player (admin action). The player is hidden from the public
  * Players page until they are re-added.
  * @param {string} userId - User ID to remove
