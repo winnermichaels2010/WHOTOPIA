@@ -940,10 +940,14 @@ const GamePage = () => {
 
     return (
       <div className="game-page">
-        <div className="game-over-screen">
+        <div className="game-over-screen loss-screen">
           <div className="game-over-content">
-            <div className="game-over-icon loss-icon"><FaMeh /></div>
-            <h1 className="game-over-title">You Lost!</h1>
+            <div className="loss-icon-wrap">
+              <div className="loss-icon-ring" />
+              <div className="loss-icon-bg" />
+              <div className="game-over-icon loss-icon"><FaMeh /></div>
+            </div>
+            <h1 className="game-over-title loss-title">You Lost!</h1>
             <p className="game-over-subtitle">{winnerName} won. Try again next time.</p>
             <div className="game-over-actions">
               {!isOnline && (

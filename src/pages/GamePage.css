@@ -1256,8 +1256,65 @@
 }
 
 .loss-icon {
-  color: var(--text-muted);
-  opacity: 0.6;
+  color: #f87171;
+  filter: drop-shadow(0 4px 12px rgba(230, 57, 70, 0.35));
+}
+
+/* --- Loss Screen --- */
+.loss-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(230, 57, 70, 0.12) 0%, transparent 62%);
+}
+
+.loss-icon-wrap {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--sp-4);
+  animation: lossAppear 0.7s ease-out both;
+}
+
+@keyframes lossAppear {
+  0% { opacity: 0; transform: translateY(30px) scale(0.7); }
+  60% { transform: translateY(-6px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.loss-icon-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(230, 57, 70, 0.22);
+  animation: lossRingPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes lossRingPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 0.2; }
+}
+
+.loss-icon-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 57, 70, 0.14) 0%, rgba(230, 57, 70, 0.03) 70%);
+}
+
+.loss-icon-wrap .game-over-icon {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 0;
+  font-size: 4.5rem;
+}
+
+.loss-title {
+  letter-spacing: -0.02em;
 }
 
 /* Cup responsive */
