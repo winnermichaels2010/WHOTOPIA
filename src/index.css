@@ -123,6 +123,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.25s ease, color 0.25s ease;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -176,4 +177,17 @@ img {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* ── Tiny Feature-Phone Screens (<=320px) ── */
+@media (max-width: 320px) {
+  /* Disable heavy effects for low-end devices */
+  * {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  #root {
+    overflow-x: hidden;
+  }
 }

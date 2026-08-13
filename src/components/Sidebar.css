@@ -370,7 +370,7 @@
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
-    width: 260px !important;
+    width: min(260px, 85vw) !important;
     box-shadow: var(--shadow-xl);
   }
 

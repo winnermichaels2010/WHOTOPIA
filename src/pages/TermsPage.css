@@ -478,3 +478,25 @@
   .terms-card p { font-size: 0.84rem; }
   .terms-card-number { font-size: 2rem; top: 1rem; right: 1rem; }
 }
+
+/* ---- Tiny Feature-Phone Screens (<=360px) ---- */
+@media (max-width: 360px) {
+  .terms-hero h1 { font-size: 1.4rem; }
+
+  .terms-hero-icon { width: 48px; height: 48px; font-size: 1.0625rem; }
+
+  .terms-body { padding: 1.5rem 0.75rem 2.5rem; }
+
+  .terms-card { padding: 0.9rem 1rem; }
+
+  .terms-card h2 { font-size: 1rem; }
+  .terms-card p { font-size: 0.8rem; }
+  .terms-card ul li { font-size: 0.8rem; }
+  .terms-card-number { font-size: 1.6rem; }
+}
+
+@media (max-width: 320px) {
+  .terms-side-nav { flex-direction: column; flex-wrap: nowrap; }
+
+  .terms-side-link { flex: 1 1 100%; }
+}

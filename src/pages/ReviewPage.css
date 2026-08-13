@@ -481,3 +481,50 @@
     padding-left: 0;
   }
 }
+
+/* ----------------------------------------
+   Tiny Feature-Phone Screens (<=360px)
+   ---------------------------------------- */
+
+@media (max-width: 360px) {
+  .review-page {
+    padding: var(--sp-3);
+  }
+
+  .review-hero {
+    padding: var(--sp-5) var(--sp-4);
+    border-radius: var(--radius-lg);
+  }
+
+  .review-hero-content h1 {
+    font-size: 1.25rem;
+  }
+
+  .review-hero-content p {
+    font-size: 0.8125rem;
+  }
+
+  .review-form-card {
+    padding: var(--sp-4) var(--sp-3);
+  }
+
+  .review-note {
+    padding: var(--sp-3);
+  }
+
+  .review-submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 320px) {
+  .review-done-card,
+  .review-empty {
+    padding: var(--sp-6) var(--sp-4);
+  }
+
+  .review-card {
+    padding: var(--sp-4) var(--sp-3);
+  }
+}

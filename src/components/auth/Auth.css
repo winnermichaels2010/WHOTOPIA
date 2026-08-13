@@ -335,6 +335,41 @@
   cursor: not-allowed;
 }
 
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  width: 100%;
+  padding-right: var(--sp-10);
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: var(--sp-3);
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-1);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover:not(:disabled) {
+  color: var(--accent-red);
+}
+
+.password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ── Form Options ── */
 
 .form-options {
@@ -651,5 +686,68 @@
   .auth-button {
     padding: 0.85rem var(--sp-5);
     font-size: 0.9rem;
+  }
+}
+
+/* ── Tiny Feature-Phone Screens (<=360px) ── */
+
+@media (max-width: 360px) {
+  .auth-top-bar {
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .auth-brand {
+    padding: var(--sp-6) var(--sp-4) var(--sp-3);
+  }
+
+  .auth-brand-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 1.6rem;
+  }
+
+  .auth-brand-title {
+    font-size: 1.5rem;
+  }
+
+  .auth-brand-subtitle {
+    font-size: 0.8125rem;
+    margin-bottom: var(--sp-4);
+  }
+
+  .auth-form-side {
+    padding: var(--sp-4) var(--sp-3) var(--sp-6);
+  }
+
+  .auth-form {
+    padding: var(--sp-5) var(--sp-4);
+  }
+
+  .auth-header h1 {
+    font-size: 1.375rem;
+  }
+
+  .auth-header p {
+    font-size: 0.8125rem;
+  }
+
+  .form-group input {
+    padding: 0.8rem var(--sp-3);
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .auth-brand-features {
+    display: none;
+  }
+
+  .auth-back-home,
+  .auth-theme-toggle {
+    padding: var(--sp-2);
+  }
+
+  .auth-form-content {
+    gap: var(--sp-3);
   }
 }

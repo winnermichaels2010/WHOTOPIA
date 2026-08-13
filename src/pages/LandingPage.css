@@ -1022,3 +1022,115 @@
     padding: var(--sp-6);
   }
 }
+
+/* ── Tiny Feature-Phone Screens (<=360px) ── */
+
+@media (max-width: 360px) {
+  .navbar {
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .nav-logo {
+    font-size: 1.25rem;
+  }
+
+  .nav-cta {
+    padding: var(--sp-2) var(--sp-3);
+    font-size: 0.8125rem;
+  }
+
+  .hero-section {
+    padding: var(--sp-8) var(--sp-3) var(--sp-4);
+  }
+
+  .hero-title {
+    font-size: clamp(1.5rem, 7vw, 1.9rem);
+  }
+
+  .hero-buttons {
+    gap: var(--sp-2);
+  }
+
+  .hero-stats {
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .card-stack {
+    width: 120px;
+    height: 160px;
+  }
+
+  .section-container {
+    padding: var(--sp-8) var(--sp-3);
+  }
+
+  .section-title {
+    font-size: 1.375rem;
+  }
+
+  .step-card {
+    padding: var(--sp-5) var(--sp-4);
+  }
+
+  .game-rules {
+    padding: var(--sp-6) var(--sp-4);
+  }
+
+  .cta-section {
+    padding: var(--sp-8) var(--sp-3);
+  }
+
+  .footer {
+    padding: var(--sp-8) var(--sp-3) var(--sp-5);
+  }
+}
+
+@media (max-width: 320px) {
+  .hero-stats {
+    gap: var(--sp-2);
+  }
+
+  .stat-number {
+    font-size: 1.125rem;
+  }
+
+  .stat-label {
+    font-size: 0.6875rem;
+  }
+
+  .card-stack {
+    width: 100px;
+    height: 135px;
+  }
+
+  .card-1 {
+    transform: rotate(-8deg) translateX(-18px);
+  }
+
+  .card-2 {
+    transform: rotate(-4deg) translateX(-9px);
+  }
+
+  .card-3 {
+    transform: rotate(4deg) translateX(9px);
+  }
+
+  .card-4 {
+    transform: rotate(8deg) translateX(18px);
+  }
+
+  .feature-card,
+  .testimonial-card {
+    padding: var(--sp-5) var(--sp-4);
+  }
+
+  .cta-title {
+    font-size: 1.375rem;
+  }
+}

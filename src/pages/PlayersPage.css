@@ -479,3 +479,61 @@
     font-size: 1rem;
   }
 }
+
+/* ---- Tiny Feature-Phone Screens (<=360px) ---- */
+@media (max-width: 360px) {
+  .players-page {
+    gap: 1rem;
+    padding: 0.75rem;
+  }
+
+  .players-hero {
+    padding: 1.5rem 0.75rem;
+    border-radius: 1rem;
+  }
+
+  .players-hero h1 {
+    font-size: 1.3rem;
+  }
+
+  .players-hero p {
+    font-size: 0.8rem;
+  }
+
+  .players-hero-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.0625rem;
+  }
+
+  .player-item {
+    gap: 0.6rem;
+    padding: 0.75rem;
+  }
+
+  .player-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.8rem;
+  }
+
+  .player-stats {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 320px) {
+  .players-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .players-count {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .players-empty {
+    padding: 2rem 1rem;
+  }
+}

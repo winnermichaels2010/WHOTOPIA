@@ -773,6 +773,62 @@
   }
 }
 
+/* Tiny Feature-Phone Screens (<=360px) */
+@media (max-width: 360px) {
+  .settings-page {
+    padding: var(--sp-3) var(--sp-2);
+  }
+
+  .settings-header {
+    gap: var(--sp-2);
+  }
+
+  .settings-header-icon-wrap {
+    width: 36px;
+    height: 36px;
+  }
+
+  .settings-header h1 {
+    font-size: 1.0625rem;
+  }
+
+  .settings-card {
+    padding: var(--sp-1) var(--sp-2);
+  }
+
+  .setting-item {
+    gap: var(--sp-2);
+  }
+
+  .profile-avatar-option img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .profile-avatar-grid {
+    gap: var(--sp-2);
+  }
+}
+
+@media (max-width: 320px) {
+  .profile-avatar-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .profile-avatar-option img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .settings-info-bar {
+    align-items: flex-start;
+  }
+
+  .delete-actions {
+    flex-direction: column;
+  }
+}
+
 /* Profile Tab Styles */
 .profile-name-input {
   padding: var(--sp-2) var(--sp-3);

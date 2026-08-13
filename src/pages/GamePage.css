@@ -534,6 +534,16 @@
   color: var(--accent-red);
   white-space: nowrap;
   letter-spacing: -0.01em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-actions-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-shrink: 0;
 }
 
 .thinking-dots {
@@ -559,6 +569,9 @@
   font-size: 0.8rem;
   color: var(--text-secondary);
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .game-symbol-display strong {
@@ -640,6 +653,8 @@
   transition: all 0.2s ease;
   position: relative;
   will-change: border-color;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .opponent-card.active-turn {
@@ -665,6 +680,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 120px;
 }
 
 .opponent-name {
@@ -673,6 +689,9 @@
   font-size: 0.8rem;
   color: var(--text-primary);
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .opponent-cards {
@@ -985,6 +1004,11 @@
 
   .opponent-card {
     padding: var(--sp-1) var(--sp-2);
+  }
+
+  .opponent-area {
+    flex-wrap: wrap;
+    gap: var(--sp-1);
   }
 
   .opponent-avatar {
@@ -1489,4 +1513,241 @@
 @keyframes slideDownFade {
   from { opacity: 0; transform: translateY(-100%); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Tiny Feature-Phone Screens (<=360px) --- */
+@media (max-width: 360px) {
+  .game-layout {
+    padding: var(--sp-1);
+    gap: var(--sp-1);
+  }
+
+  .opponent-area {
+    gap: 0.25rem;
+  }
+
+  .opponent-card {
+    gap: var(--sp-1);
+    padding: 4px 8px;
+    border-radius: var(--radius-xs);
+  }
+
+  .opponent-avatar {
+    width: 20px;
+    height: 20px;
+    font-size: 0.55rem;
+  }
+
+  .opponent-info {
+    max-width: 90px;
+  }
+
+  .opponent-name {
+    font-size: 0.65rem;
+  }
+
+  .opponent-cards {
+    font-size: 0.6rem;
+  }
+
+  .turn-indicator {
+    width: 6px;
+    height: 6px;
+    top: -2px;
+    right: -2px;
+  }
+
+  .board-center {
+    gap: var(--sp-2);
+  }
+
+  .draw-label {
+    font-size: 0.65rem;
+  }
+
+  .draw-count {
+    font-size: 0.55rem;
+  }
+
+  .deal-players {
+    gap: 1rem;
+  }
+
+  .deal-player {
+    width: 84px;
+  }
+
+  .deal-card {
+    width: 40px;
+    height: 58px;
+  }
+
+  .symbol-picker-modal {
+    padding: var(--sp-6) var(--sp-4);
+  }
+
+  .symbol-option {
+    padding: var(--sp-4) var(--sp-2);
+  }
+
+  .connection-popup {
+    padding: var(--sp-6) var(--sp-4);
+  }
+
+  .start-content,
+  .game-over-content {
+    padding: 0 var(--sp-2);
+  }
+
+  .start-icon {
+    font-size: 2.75rem;
+  }
+
+  .start-title,
+  .game-over-title {
+    font-size: 1.5rem;
+  }
+
+  .start-subtitle,
+  .game-over-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .difficulty-selector {
+    padding: var(--sp-4);
+  }
+
+  .game-back-btn {
+    padding: var(--sp-1) var(--sp-3);
+    font-size: 0.8rem;
+  }
+
+  .last-action {
+    max-width: 80px;
+  }
+
+  .one-card-warning {
+    font-size: 0.7rem;
+  }
+}
+
+/* --- Tiny Feature-Phone Screens (<=320px) --- */
+@media (max-width: 320px) {
+  .game-header {
+    gap: var(--sp-1);
+  }
+
+  .game-symbol-display {
+    display: none;
+  }
+
+  .game-status {
+    font-size: 0.7rem;
+  }
+
+  .opponent-info {
+    max-width: 72px;
+  }
+
+  .board-center {
+    gap: var(--sp-1);
+  }
+
+  .draw-pile-stack {
+    width: 40px;
+    height: 56px;
+  }
+
+  .draw-pile-card {
+    width: 40px;
+    height: 56px;
+  }
+
+  .empty-play-area {
+    width: 50px;
+    height: 72px;
+    font-size: 0.55rem;
+  }
+
+  .hand-cards {
+    gap: 0.15rem;
+  }
+
+  .symbol-options {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-2);
+  }
+
+  .winner-cup-container {
+    width: 110px;
+    height: 130px;
+  }
+
+  .winner-cup-emoji {
+    font-size: 96px;
+  }
+
+  .winner-crown {
+    font-size: 1.3rem;
+  }
+
+  .cup-glow {
+    width: 100px;
+    height: 100px;
+  }
+
+  .celebration-text span {
+    font-size: 1.75rem;
+  }
+
+  .celebration-trophy-icon {
+    font-size: 2.5rem;
+  }
+
+  .loss-icon-wrap {
+    width: 110px;
+    height: 110px;
+  }
+
+  .loss-icon-wrap .game-over-icon {
+    font-size: 3.25rem;
+  }
+
+  .connection-popup-actions {
+    flex-direction: column;
+  }
+}
+
+/* --- Tiny Feature-Phone Screens (<=240px) --- */
+@media (max-width: 240px) {
+  .opponent-info {
+    max-width: 56px;
+  }
+
+  .deal-players {
+    gap: 0.5rem;
+  }
+
+  .deal-player {
+    width: 70px;
+  }
+
+  .deal-deck {
+    width: 55px;
+    height: 80px;
+  }
+
+  .deal-card {
+    width: 34px;
+    height: 50px;
+  }
+
+  .symbol-options {
+    grid-template-columns: 1fr;
+  }
+
+  .start-game-btn {
+    padding: var(--sp-2) var(--sp-5);
+    font-size: 0.875rem;
+  }
 }

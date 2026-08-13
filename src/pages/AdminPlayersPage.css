@@ -538,3 +538,50 @@
     justify-content: center;
   }
 }
+
+/* Tiny Feature-Phone Screens (<=360px) */
+@media (max-width: 360px) {
+  .admin-players-content {
+    padding: 1rem 0.75rem 2.5rem;
+  }
+
+  .admin-players-hero {
+    padding: 1.5rem 1rem;
+  }
+
+  .admin-players-hero h1 {
+    font-size: 1.25rem;
+  }
+
+  .admin-players-tab {
+    font-size: 0.75rem;
+    padding: 0.6rem 0.4rem;
+    gap: 0.35rem;
+  }
+
+  .admin-player-item {
+    padding: 0.75rem;
+    gap: 0.6rem;
+  }
+
+  .admin-player-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 0.8rem;
+  }
+
+  .admin-player-modal {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .admin-player-modal-actions {
+    flex-direction: column;
+  }
+
+  .admin-player-stats {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+}

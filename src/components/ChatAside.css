@@ -560,3 +560,45 @@
     padding-right: 64px;
   }
 }
+
+/* Tiny Feature-Phone Screens (<=360px) */
+@media (max-width: 360px) {
+  .chat-selection-bar {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .chat-selection-count {
+    width: 100%;
+  }
+
+  .chat-selection-action {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .chat-header {
+    padding: 0.75rem 0.9rem;
+  }
+
+  .chat-aside.open .chat-header {
+    padding-right: 56px;
+  }
+}
+
+@media (max-width: 320px) {
+  .chat-selection-action {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .chat-toggle {
+    width: 40px;
+    height: 40px;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .chat-input-area {
+    padding: 0.5rem 0.6rem;
+  }
+}
