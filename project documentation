@@ -1,0 +1,481 @@
+WHOTOPIA PROJECT DOCUMENTATION
+
+
+1. PROJECT OVERVIEW
+
+Whotopia is a web-based multiplayer implementation of the classic Nigerian card game "Whot" (similar to Crazy Eights / UNO). Built with React 18, Firebase, and Vite.
+
+It supports single-player mode against AI opponents (Easy, Medium, Hard), multiplayer mode via Realtime Database synced rooms with up to 6 players, in-game chat with reply, delete, selection, and notification sounds, user profiles, match history, leaderboards, reviews, and admin management, and dark mode with full light/dark theming via CSS custom properties.
+
+Live deployment is on Vercel using SPA with rewrites to index.html.
+
+
+2. TECH STACK
+
+Framework: React 18.3 (JSX)
+Build Tool: Vite 5.4
+Styling: Tailwind CSS 4.3 (via @tailwindcss/vite) and custom CSS per component
+Routing: React Router DOM 7.18
+Backend / DB: Firebase 12.15 (Auth, Firestore, Realtime Database)
+Icons: react-icons 5.6 (Fa* icons)
+Testing: Vitest 4.1 + jsdom + @testing-library/react
+Linting: ESLint 9 + eslint-plugin-react, react-hooks, react-refresh
+Font: Playfair Display (Google Fonts)
+Deployment: Vercel
+
+
+3. PROJECT STRUCTURE
+
+WHOTOPIA/
+  index.html
+  package.json
+  vite.config.js
+  vitest.config.js
+  vercel.json
+  eslint.config.js
+  .env
+  .gitignore
+  FIREBASE_ARCHITECTURE.md
+  README.md
+  project documentation
+  public/
+    favicon.svg
+    vite.svg
+  src/
+    main.jsx
+    App.jsx
+    App.css
+    index.css
+    assets/
+      react.svg
+    context/
+      AuthContext.jsx
+      ThemeContext.jsx
+    firebase/
+      firebaseConfig.js
+      index.js
+      services/
+        authService.js
+        firestoreService.js
+        realtimeDBService.js
+      hooks/
+        index.js
+        useAuth.js
+        useFirestore.js
+        useRealtimeDB.js
+    game/
+      rules.js
+      WhotDeck.js
+      GameEngine.js
+      AIEngine.js
+      __tests__/
+        WhotRules.test.mjs
+    components/
+      Sidebar.jsx
+      Sidebar.css
+      AdminSidebar.jsx
+      AdminSidebar.css
+      ChatAside.jsx
+      ChatAside.css
+      LoadingSpinner.jsx
+      LoadingSpinner.css
+      auth/
+        Auth.css
+        LoginForm.jsx
+        RegisterForm.jsx
+        ForgotPasswordForm.jsx
+        ProtectedRoute.jsx
+        PublicRoute.jsx
+      game/
+        Card.jsx
+        Card.css
+        PlayerHand.jsx
+        OpponentArea.jsx
+        CardAnimationLayer.jsx
+        CardAnimation.css
+    pages/
+      LandingPage.jsx
+      LandingPage.css
+      LoginPage.jsx
+      LoginPage.css
+      HomePage.jsx
+      HomePage.css
+      GamePage.jsx
+      GamePage.css
+      GamePage.test.jsx
+      LobbyPage.jsx
+      LobbyPage.css
+      HowToPlayPage.jsx
+      HowToPlayPage.css
+      SettingsPage.jsx
+      SettingsPage.css
+      PlayersPage.jsx
+      PlayersPage.css
+      ShareCodePage.jsx
+      ShareCodePage.css
+      NotificationsPage.jsx
+      NotificationsPage.css
+      ReviewPage.jsx
+      ReviewPage.css
+      TermsPage.jsx
+      TermsPage.css
+      AdminReviewsPage.jsx
+      AdminReviewsPage.css
+      AdminPlayersPage.jsx
+      AdminPlayersPage.css
+    utils/
+      reviewStatus.js
+
+
+4. ROUTING
+
+Defined in src/App.jsx:
+
+/                    LandingPage          PublicRoute      Sidebar
+/login               LoginPage            -                Full page
+/dashboard           HomePage             ProtectedRoute   Sidebar
+/play/ai             GamePage             ProtectedRoute   Full page
+/play/online/:roomId GamePage             ProtectedRoute   Full page
+/lobby               LobbyPage            ProtectedRoute   Sidebar
+/how-to-play         HowToPlayPage        -                Sidebar
+/settings            SettingsPage         ProtectedRoute   Sidebar
+/players             PlayersPage          ProtectedRoute   Sidebar
+/share-code          ShareCodePage        ProtectedRoute   Sidebar
+/notifications       NotificationsPage    ProtectedRoute   Sidebar
+/review              ReviewPage           ProtectedRoute   Sidebar
+/terms               TermsPage            -                Sidebar
+/admin-reviews       AdminReviewsPage     ProtectedRoute   None
+/admin-players       AdminPlayersPage     ProtectedRoute   None
+*                    Navigate to /        -                -
+
+Route Guards:
+ProtectedRoute redirects to /login if user is null.
+PublicRoute redirects to /dashboard if user is already logged in.
+Admin detection: Email review@gmail.com triggers admin routes.
+
+
+5. GAME ENGINE (src/game/)
+
+5.1 Rules (rules.js)
+
+Default game rules:
+  startingCards: 5
+  stackingPenalties: true
+  allowMultiPlay: false
+  enablePick2: true
+  enablePick3: true
+  enableSuspension: true
+  enableHoldOn: true
+  enableGeneralMarket: true
+  allowDefendPick2: true
+  allowDefendPick3: true
+  whotCardPower: 'full' (options: 'full', 'limited', 'off')
+
+
+5.2 Deck (WhotDeck.js)
+
+54 cards total across 5 symbols:
+  Circle (12 cards): values 1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14
+  Triangle (12 cards): values 1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14
+  Cross (9 cards): values 1, 2, 3, 5, 7, 10, 11, 13, 14
+  Square (9 cards): values 1, 2, 3, 5, 7, 10, 11, 13, 14
+  Star (7 cards): values 1, 2, 3, 4, 5, 7, 8
+  Whot (5 cards): value 20, wild card
+
+Special card values:
+  1 = Hold On
+  2 = Pick Two
+  5 = Pick Three
+  8 = Suspension
+  14 = General Market
+  20 = Whot (wild card)
+
+
+5.3 Game Engine (GameEngine.js, 429 lines)
+
+Core methods:
+  initGame(playerNames, cardsPerPlayer) - Creates players, builds/shuffles deck, deals cards, flips first card
+  canPlayCard(card, playerId) - Validates if a card can be played
+  playCard(card, playerId, chosenSymbol) - Plays a card, applies special effects, checks for win, advances turn
+  drawCard(playerId) - Draws from deck (handles penalty draws separately)
+  applySpecialEffects(card, playerId) - Applies Hold On, Pick 2, Pick 3, Suspension, General Market
+  advanceTurn() - Moves to next active player, handles skip/penalty states
+  getGameState(playerId) - Returns player-specific game state with valid moves
+  getValidCards(playerId) - Filters hand to playable cards
+  exportState() / importState(state) - Serialize/deserialize for Firebase sync
+
+Penalty defense system:
+When facing a Pick 2 penalty, you can defend by playing another Pick 2 (value=2), which passes the penalty. Same for Pick 3 (value=5).
+
+
+5.4 AI Engine (AIEngine.js, 116 lines)
+
+Three difficulty levels:
+
+Easy: Plays the first valid card randomly.
+
+Medium: Prioritizes non-special cards when hand > 4, pick cards when hand > 6, hold cards, whot cards when hand <= 3, suspension, general market when hand > 3.
+
+Hard: Scores each move with weighted factors: whot (+50/+30), hold (+25), pick2 (+20), pick3 (+25), suspension (+15), general market (+10/+20), winning move (+100), near-win (+15).
+
+Symbol selection (for Whot cards): Chooses the symbol with the most cards in hand.
+
+
+6. FIREBASE ARCHITECTURE
+
+6.1 Services Used
+
+Firebase Authentication: Email/password, Google OAuth, Anonymous sign-in
+Cloud Firestore: User profiles, match history, leaderboards, reviews, notifications
+Realtime Database: Game rooms, room players, active game state, chat messages
+
+
+6.2 Firestore Collections
+
+users (Document ID: Auth UID)
+  Key fields: displayName, email, photoURL, stats (wins, losses, winRate, winStreak, bestWinStreak), settings, isRemoved, wasReadded
+
+matchHistory (Document ID: Auto-generated)
+  Key fields: players[], winner, gameMode, duration, timestamp
+
+reviews (Document ID: Auto-generated)
+  Key fields: userId, displayName, email, review, suggestion, timestamp
+
+postedReviews (Document ID: Auto-generated)
+  Key fields: displayName, email, review, suggestion, timestamp
+
+notifications (Document ID: Auto-generated)
+  Key fields: recipientId, senderId, senderName, roomCode, roomName, message, read, expired, createdAt
+
+
+6.3 Realtime Database Paths
+
+gameRooms/{roomId}
+  Room metadata: roomId, name, hostId, maxPlayers, currentPlayers, status, gameMode, rules
+
+gameRooms/{roomId}/players/{playerId}
+  Player info: displayName, photoURL, status, isHost, joinedAt
+
+activeGames/{roomId}
+  Full game state (exported from GameEngine): players, deck, currentTurn, drawPenalty, etc.
+
+chat/{roomId}/{messageId}
+  Chat messages: text, senderId, senderName, timestamp, replyTo, deleted, deletedBy
+
+
+6.4 Firebase Hooks
+
+useAuth - Returns: user, loading, error, isAuthenticated, isGuest, signUp, signIn, googleSignIn, guestSignIn, logout, updateProfile, resetPassword, deleteAccount
+
+useUserProfile(userId) - Returns: profile, loading, updateProfile, createProfile
+
+useMatchHistory(userId) - Returns: matches, loading, fetchMatchHistory, recordMatch, clearHistory
+
+useLeaderboard(type) - Returns: leaderboard, loading
+
+useNotifications(userId) - Returns: notifications, loading, unreadCount, markRead, markExpired
+
+useGameRoom(roomId) - Returns: room, loading, createRoom, updateRoom, deleteRoom
+
+useAvailableRooms() - Returns: rooms, loading, fetchRooms
+
+useRoomPlayers(roomId) - Returns: players, loading, addPlayer, removePlayer
+
+useGameState(roomId) - Returns: gameState, loading, setGame, updateGame, endGame
+
+useChat(roomId) - Returns: messages, loading, sendMessage, clearMessages
+
+
+7. CONTEXT PROVIDERS
+
+7.1 AuthContext (src/context/AuthContext.jsx)
+Wraps useAuth hook. Provides user, loading, error, isAuthenticated, isGuest, signIn, signUp, and other methods to the entire app.
+
+7.2 ThemeContext (src/context/ThemeContext.jsx)
+Manages isDark state. Persists to localStorage('whotopia-theme'). Sets data-theme="dark" on html for CSS variable switching. Respects prefers-color-scheme on first visit.
+
+
+8. COMPONENTS
+
+8.1 Sidebar (src/components/Sidebar.jsx)
+Collapsible desktop sidebar with navigation items. Mobile hamburger menu with overlay. Navigation items: Home, Dashboard, Players, Play (submenu: vs Computer, vs Players), How to Play, Settings, Review, Terms. Review link hidden if user has already reviewed (tracked in localStorage). Admin users see "Reviews" link instead of "Review". Theme toggle, notifications badge, sign out button. Play submenu expands/collapses.
+
+8.2 AdminSidebar (src/components/AdminSidebar.jsx)
+Separate sidebar for admin pages (/admin-reviews, /admin-players). Links: Review, Players Management. Theme toggle, sign out.
+
+8.3 ChatAside (src/components/ChatAside.jsx, 541 lines)
+Full-featured in-game chat with real-time message sync via Firebase Realtime Database (onChildAdded, onChildChanged). Reply: Swipe right on a message to reply. Selection mode: Long-press (500ms) to enter selection mode. Delete: Delete for me (localStorage) or delete for everyone (Firebase update). Copy: Copy selected message text. Notification sound: Web Audio API sine wave beep when message arrives and chat is closed. Mute toggle: Persisted to localStorage. Message status indicators (sending, sent, failed). Auto-scroll to bottom on new messages.
+
+8.4 LoadingSpinner (src/components/LoadingSpinner.jsx)
+Animated SVG "W" letter formed by 4 staggered line segments.
+
+8.5 Auth Components (src/components/auth/)
+  LoginForm: Email/password fields, show/hide password toggle, Google sign-in button, forgot password link, sign up link
+  RegisterForm: Display name (max 10 chars, no spaces), email, password, confirm password, terms checkbox, Google sign-up
+  ForgotPasswordForm: Email input, sends reset link, success/error states
+  ProtectedRoute: Shows spinner while loading, redirects to /login if no user
+  PublicRoute: Shows spinner while loading, redirects to /dashboard if user exists
+
+8.6 Game Components (src/components/game/)
+  Card: Renders a single Whot card with symbol, value, color, special effect labels
+  PlayerHand: Renders the player's hand as a horizontal row of Card components
+  OpponentArea: Shows opponent cards (card count), active turn indicator
+  CardAnimationLayer: Flying card animations using CSS custom properties for start/end positions
+
+
+9. PAGES
+
+9.1 LandingPage (src/pages/LandingPage.jsx)
+Public marketing page with hero section (animated card stack, stats: 10K+ players, 50K+ games, 4.9 rating), features grid (Multiplayer, Leaderboards, Easy to Learn, Match History, In-Game Chat, Secure & Fair), How to Play section (4 steps), Testimonials (3 Nigerian user reviews), CTA section and footer.
+
+9.2 LoginPage (src/pages/LoginPage.jsx)
+Split-screen auth page with brand side (Whotopia logo, features) and form side. Switches between login, register, and forgot password forms.
+
+9.3 HomePage (src/pages/HomePage.jsx)
+Dashboard for logged-in users with personalized greeting (Good morning/afternoon/evening), avatar (Google photo or DiceBear anime avatar or initial), stats cards (Games Played, Total Wins), Quick Play buttons (vs Computer, Play Online), quick links (How to Play, Game Settings), clear match history button with confirmation modal.
+
+9.4 GamePage (src/pages/GamePage.jsx, 1128 lines)
+The main game interface handling both AI and online modes.
+
+AI Mode: Difficulty selection screen (Easy, Medium, Hard), card dealing animation (shuffle, deal, reveal), player hand, opponent area, draw pile, play area, AI turns with 1-second thinking delay, card animations (flying cards for play/draw), wrong move feedback ("Wrong move emoji"), one-card warning when opponent has 1 card, game over screens (celebration bubbles, victory cup animation, or loss screen).
+
+Online Mode: Connects to Firebase Realtime Database for game state sync. Host initializes game state; both players listen for updates. Chat panel (ChatAside). Offline detection and reconnection overlay. Opponent left detection and cancellation. onDisconnect handler removes player from room on disconnect.
+
+Game Over: Records match to Firestore (only AI games count toward stats).
+
+9.5 LobbyPage (src/pages/LobbyPage.jsx, 741 lines)
+Multiplayer room management. Create Room: Generates 4-character alphanumeric code (excludes ambiguous chars I, O, 0, 1), creates Firebase room, adds self as host. Join Room: Enter 4-character code, validates room exists and is waiting. Room View: Shows room code (copyable), player list with avatars, host badge. Rules Configuration: Host can toggle game rules (starting cards, stack penalties, multi-play, Whot card power, all card effects). Start Game: Host starts when 2+ players joined, marks notifications as expired. Share Code: Navigates to ShareCodePage for in-app invites. Auto-join: Supports ?join=CODE query parameter for deep linking from notifications.
+
+9.6 HowToPlayPage (src/pages/HowToPlayPage.jsx)
+Interactive rules guide with parallax hero with floating card animations, floating navigation dots (Overview, Card Deck, Basic Rules, Special Cards, Tips), scroll progress bar, flip cards for special card descriptions, 5 strategy tips.
+
+9.7 SettingsPage (src/pages/SettingsPage.jsx)
+Tabbed settings interface. Profile: Display name, bot name, avatar selection (10 DiceBear anime avatars). Game Rules: Starting cards, defend penalties, multi-play, Whot card power. Card Effects: Toggle Pick 2, Pick 3, Suspension, Hold On, General Market. Defense Rules: Toggle defend Pick 2, defend Pick 3. Display and Audio: AI difficulty, sound effects, animations, card hints, auto-play. Settings saved to localStorage('whotopia_settings'). Profile changes synced to Firebase.
+
+9.8 PlayersPage (src/pages/PlayersPage.jsx)
+Public list of all registered users with search. Shows wins, losses, win rate. Hides removed players.
+
+9.9 ShareCodePage (src/pages/ShareCodePage.jsx)
+Invite system. Displays room code (auto-copied to clipboard). List of eligible players with search, select all. Sends in-app notification to selected players via Firestore batch write.
+
+9.10 NotificationsPage (src/pages/NotificationsPage.jsx)
+Lists received room invites. Shows sender, room code, message, timestamp. Checks room status in Realtime Database (active/expired). Join button navigates to lobby with ?join=CODE. Auto-marks as read on view.
+
+9.11 ReviewPage (src/pages/ReviewPage.jsx)
+One-time review submission. Checks localStorage and Firestore for existing review. Form: review text + optional suggestion. After submission, redirects to dashboard after 3 seconds. Hides Review link in sidebar after submission.
+
+9.12 TermsPage (src/pages/TermsPage.jsx)
+Terms and Conditions with 10 sections, animated intersection observer reveals, side navigation.
+
+9.13 AdminReviewsPage (src/pages/AdminReviewsPage.jsx)
+Admin-only page with real-time review list via Firestore onSnapshot. Stats (total reviews, with suggestions). Delete individual reviews or clear all. Refresh button.
+
+9.14 AdminPlayersPage (src/pages/AdminPlayersPage.jsx)
+Admin-only page. List all players (active/removed tabs). Search functionality. Remove player (soft delete - sets isRemoved: true). Restore removed player (sets isRemoved: false, wasReadded: true). Shows removed date and who removed them.
+
+
+10. STYLING
+
+10.1 CSS Architecture
+Global: index.css defines CSS custom properties for light/dark themes (HSL colors, shadows, radii, spacing). Component-scoped: Each component/page has its own .css file imported directly. Font: Playfair Display (serif) for body and headings. Color System: 60-30-10 rule via HSL variables. 60% = Background neutrals (bg-primary, bg-secondary). 30% = Supporting tones (borders, hover states). 10% = Accent colors (accent-red, accent-coral, gradient).
+
+10.2 Dark Mode
+Toggle via data-theme="dark" attribute on html. All colors swap via CSS variable overrides in :root and [data-theme="dark"].
+
+10.3 Responsive Design
+Mobile sidebar collapses to hamburger menu. Game page adapts to mobile viewport. Landing page, HowToPlay, Terms all have responsive layouts. Feature phone screens (320px or less): disables backdrop-filter.
+
+
+11. TESTING
+
+11.1 Test Configuration
+Framework: Vitest 4.1
+Environment: jsdom
+Test pattern: src/**/*.test.{js,jsx,mjs}
+
+11.2 Test Files
+
+src/game/__tests__/WhotRules.test.mjs (531 lines, 30+ tests):
+  Turn order validation
+  Card play legality (symbol match, value match, Whot card)
+  Special card effects (Hold On, Pick 2, Pick 3, Suspension, General Market)
+  Penalty defense mechanics
+  Deck reshuffling when empty
+  Game over detection
+  Direction handling
+  Edge cases (empty hand, invalid plays)
+
+src/pages/GamePage.test.jsx (90 lines):
+  Mocks Firebase services (Realtime DB, Firestore)
+  Tests online mode rendering (host initializes game, board renders with draw count)
+
+11.3 Running Tests
+Run tests: npm run test (vitest run)
+Lint code: npm run lint (ESLint)
+
+
+12. SCRIPTS
+
+From package.json:
+  npm run dev       - Start dev server (vite)
+  npm run build     - Production build (vite build)
+  npm run lint      - Lint all files (eslint .)
+  npm run test      - Run tests once (vitest run)
+  npm run preview   - Preview production build (vite preview)
+
+
+13. DEPLOYMENT
+
+Platform: Vercel
+Config: vercel.json rewrites all routes to index.html (SPA support)
+Build: vite build outputs to dist/
+Environment: Firebase config loaded from VITE_FIREBASE_* env vars
+
+
+14. KEY FEATURES SUMMARY
+
+1. Full Whot game engine with all standard card effects and defense mechanics.
+2. AI opponents with 3 difficulty levels (random, strategic, advanced scoring).
+3. Real-time multiplayer via Firebase Realtime Database with room codes.
+4. In-game chat with reply, delete (for me/everyone), selection mode, notification sounds.
+5. User profiles with DiceBear anime avatars.
+6. Match history and stats (wins, losses, win rate, win streak) stored in Firestore.
+7. Admin panel for reviewing player feedback and managing users.
+8. Notification system for room invites via Firestore.
+9. Dark/light theme with system preference detection.
+10. Fully responsive design (desktop, tablet, mobile, feature phone).
+11. Card animations (flying cards for draw/play actions).
+12. Game rules customization (per-game in lobby, or persistent in settings).
+
+
+15. ENVIRONMENT VARIABLES
+
+VITE_FIREBASE_API_KEY             Firebase API key
+VITE_FIREBASE_AUTH_DOMAIN         Firebase auth domain
+VITE_FIREBASE_PROJECT_ID          Firebase project ID
+VITE_FIREBASE_STORAGE_BUCKET      Firebase storage bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID Firebase messaging sender ID
+VITE_FIREBASE_APP_ID              Firebase app ID
+VITE_FIREBASE_MEASUREMENT_ID      Firebase measurement ID (optional)
+VITE_FIREBASE_DATABASE_URL        Firebase Realtime Database URL
+
+
+16. CARD DECK REFERENCE
+
+Symbols and Values:
+
+Star     Values: 1, 2, 3, 4, 5, 7, 8
+Circle   Values: 1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14
+Cross    Values: 1, 2, 3, 5, 7, 10, 11, 13, 14
+Square   Values: 1, 2, 3, 5, 7, 10, 11, 13, 14
+Triangle Values: 1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14
+Whot     Values: 20 (5 copies)
+
+Special Effects by Value:
+
+Value 1  = Hold On         Same player plays again
+Value 2  = Pick Two        Next player draws 2 cards
+Value 5  = Pick Three      Next player draws 3 cards
+Value 8  = Suspension      Next player's turn is skipped
+Value 14 = General Market  Next player draws 1 card
+Value 20 = Whot            Wild card, can match any card, player chooses new symbol

@@ -26,6 +26,14 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="hero-section">
+        <div className="hero-cover">
+          <img
+            src="/Hero/Hero.jpg"
+            alt="Whotopia hero cover"
+            className="hero-cover-img"
+          />
+          <div className="hero-overlay"></div>
+        </div>
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
@@ -59,34 +67,6 @@ const LandingPage = () => {
               <div className="stat-item">
                 <div className="stat-number">4.9</div>
                 <div className="stat-label">User Rating</div>
-              </div>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="card-stack">
-              <div className="card card-1">
-                <div className="card-inner">
-                  <div className="card-symbol">★</div>
-                  <div className="card-value">7</div>
-                </div>
-              </div>
-              <div className="card card-2">
-                <div className="card-inner">
-                  <div className="card-symbol">◆</div>
-                  <div className="card-value">5</div>
-                </div>
-              </div>
-              <div className="card card-3">
-                <div className="card-inner">
-                  <div className="card-symbol">●</div>
-                  <div className="card-value">3</div>
-                </div>
-              </div>
-              <div className="card card-4">
-                <div className="card-inner">
-                  <div className="card-symbol whot">W</div>
-                  <div className="card-value">14</div>
-                </div>
               </div>
             </div>
           </div>
